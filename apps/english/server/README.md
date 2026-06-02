@@ -1,14 +1,15 @@
 # english-test backend
 
 Express + Prisma (SQL Server / Azure SQL) backend for the exam engine + content
-admin. Shares one database (`gofive_assessments`) with the mbti-personality
-service — see `../docs/unified-db-plan.md` for the schema-ownership model.
+admin. Shares one database (`gofive_assessments`) with the mbti
+service (`apps/mbti`) — see `../docs/unified-db-plan.md` for the
+schema-ownership model.
 
 ## Quick start
 
 ```bash
-# 1. Start SQL Server (the shared container lives in the mbti repo)
-docker compose -f ../../mbti-personality/docker-compose.yml up -d
+# 1. Start SQL Server (the shared container lives in the mbti app)
+docker compose -f ../../mbti/docker-compose.yml up -d
 
 # 2. Install deps (postinstall runs `prisma generate`)
 npm install
@@ -42,9 +43,11 @@ Then in the React app root: `npm run dev` (Vite proxies `/api/*` here).
 
 ### Shared-database rules
 
-- This repo owns the migration ledger for the `english` AND `shared` schemas.
+- This app owns the migration ledger for the `english` AND `shared` schemas.
 - The mbti service only *declares* `shared.subjects` and must never run
   `migrate dev`/`db push` against the shared database (it applies its own
-  `mbti` schema changes via `prisma migrate diff` + `db execute`).
+  `mbti` schema changes via hand-maintained SQL scripts in
+  `../../mbti/prisma/`: mbti-tables.sql → phase2-transfer.sql →
+  merge-results.sql → add-webhook-delivery.sql).
 - `shared.subjects` column shapes must stay in lockstep with
-  `mbti-personality/prisma/schema.prisma`.
+  `../../mbti/prisma/schema.prisma`.

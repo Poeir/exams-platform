@@ -1,11 +1,13 @@
 # english-test
 
-TOEIC-style English proficiency test web app with Gofive branding. A React 18 + Vite single-page app for taking the exam, paired with an Express + Postgres backend that stores exam content, manages candidate attempts, scores submissions server-side (TOEIC-style + CEFR level), and can be launched from a parent site via one-time session tokens. Exam content is authored through a built-in admin UI.
+TOEIC-style English proficiency test web app with Gofive branding. A React 18 + Vite single-page app for taking the exam, paired with an Express + Prisma (SQL Server / Azure SQL) backend that stores exam content, manages candidate attempts, scores submissions server-side (TOEIC-style + CEFR level), and can be launched from a parent site via one-time session tokens. Exam content is authored through a built-in admin UI.
+
+> This app lives in `apps/english` of the **gofive-exams** monorepo and is normally mounted at `/english` behind the path-routing gateway (see the repo-root `README.md`). Everything below also works standalone for development.
 
 ## Repository layout
 
 ```
-english-test/
+apps/english/
 ├── src/                      # React app (exam taker + admin UI)
 │   ├── App.jsx               # Version-aware flow state machine + URL routing
 │   ├── admin/                # Admin UI mounted at /admin (content editor + attempts history)
@@ -14,14 +16,15 @@ english-test/
 │   ├── state/ExamContext.jsx # Exam state — localStorage (`et-*`) + server attempt autosave
 │   ├── data/exam.js          # Shapes a paper bundle into EXAM (data-shape only)
 │   ├── data/examRepo.js      # API client (papers, sections, items, attempts, seed)
+│   ├── lib/base.js           # Base-path helpers (standalone '' vs gateway '/english')
 │   └── styles/               # Plain CSS + design tokens
-├── server/                   # Express API + Postgres (content, attempts, scoring, webhooks)
-│   ├── src/                  # index.js, routes/, db, scoring, cefr, shape, webhook, openapi, middleware
-│   ├── migrations/           # SQL schema (001_init, 002_attempts)
-│   └── docker-compose.yml    # Postgres 16 + pgAdmin
+├── server/                   # Express API + Prisma/SQL Server (content, attempts, scoring, webhooks)
+│   ├── src/                  # app.js, index.js, routes/, db, scoring, cefr, shape, webhook, openapi, middleware
+│   └── prisma/               # schema.prisma + migrations (owns the english + shared schemas)
 ├── public/                   # Static assets: voice/, fonts/, logo
-├── papers_export_1_full.json # Seed source for exam content (loaded into Postgres)
-├── vite.config.js            # Dev server on :5175, proxies /api → :3001
+├── papers_export_1_full.json # Seed source: full paper (gitignored — answer keys)
+├── papers_export_2_short.json# Seed source: 15-min short placement paper (gitignored)
+├── vite.config.js            # Dev server on :5175, proxies /api → :3002
 ├── CLAUDE.md / AGENTS.md     # Developer guidance
 └── dist/                     # Production build output
 ```
@@ -29,64 +32,60 @@ english-test/
 ## Prerequisites
 
 - **Node.js 18+** and npm
-- **Docker Desktop** — for Postgres (and pgAdmin)
+- **Docker Desktop** — for SQL Server (Azure SQL Edge); the shared container is defined in `../mbti/docker-compose.yml`
 
-The React app loads all exam content from the API, so the backend and a seeded database are required to run the exam — there is no offline/bundled-JSON mode. `papers_export_1_full.json` is only the seed source.
+The React app loads all exam content from the API, so the backend and a seeded database are required to run the exam — there is no offline/bundled-JSON mode. The `papers_export_*.json` files are only seed sources (and are gitignored — they contain the answer keys).
 
 ## Quick start
 
-Run these from the repo root. Commands are shown for both PowerShell (Windows) and bash/zsh (macOS/Linux); pick the line that matches your shell.
+Run these from `apps/english`. Commands are shown for both PowerShell (Windows) and bash/zsh (macOS/Linux); pick the line that matches your shell.
+
+> **Do not use `npm --prefix <dir> install`** — npm on Windows corrupts the app's package.json/lockfile when a parent package is in scope (see the repo-root `CLAUDE.md`). `cd` into the directory instead.
 
 ```powershell
-# 1. Configure environment files
-#    Root .env  → frontend (Vite proxy target + Cloudinary upload settings)
-#    server/.env → backend (DATABASE_URL, admin credentials, session/webhook settings)
-Copy-Item .env.example .env                 # bash: cp .env.example .env
+# 1. Configure the backend environment
+#    server/.env → DATABASE_URL, PORT=3002, admin credentials, session/webhook settings
 Copy-Item server\.env.example server\.env   # bash: cp server/.env.example server/.env
 
-# 2. Start Postgres (and pgAdmin on :5050) via Docker
-docker compose -f server/docker-compose.yml up -d
+# 2. Start SQL Server (Azure SQL Edge) via the shared container
+docker compose -f ..\mbti\docker-compose.yml up -d   # bash: docker compose -f ../mbti/docker-compose.yml up -d
 
-# 3. Install dependencies (root + server) and apply the DB schema
+# 3. Install dependencies (app + server) and apply the DB schema
 npm install
-npm install --prefix server
-npm run migrate --prefix server             # applies server/migrations/*.sql
+cd server; npm install                      # bash: cd server && npm install
+npm run migrate                             # prisma migrate deploy (english + shared schemas)
+cd ..
 
 # 4. Start the frontend and API together
-npm run dev:all      # Vite (:5175) + API (:3001), color-tagged output
+npm run dev:all      # Vite (:5175) + API (:3002), color-tagged output
 ```
 
 Then:
 
 - Exam: `http://localhost:5175`
 - Admin UI: `http://localhost:5175/admin`
-- API health check: `http://localhost:3001/api/health`
-- API docs (Swagger): `http://localhost:3001/api/docs`
-- pgAdmin: `http://localhost:5050` (login `admin@local.dev` / `admin`)
+- API health check: `http://localhost:3002/api/health`
+- API docs (Swagger): `http://localhost:3002/api/docs`
 
-The database starts empty. **Before the exam will load**, populate the content into Postgres by clicking **Seed from JSON** in the admin UI, or by running `npm run seed --prefix server`. Until then the exam shows a "Could not load the exam" screen.
+The database starts empty. **Before the exam will load**, populate the content by clicking **Seed from JSON** in the admin UI, or by running `npm run seed` inside `server/` (pass another JSON path as an argument to seed the short paper). Until then the exam shows a "Could not load the exam" screen.
 
 ### Environment variables
 
-`.env` (root, frontend — Vite reads `VITE_*` at build time):
-
-| Variable | Purpose |
-| --- | --- |
-| `VITE_API_URL` | API base path; `/api` so the Vite dev proxy forwards to the server |
-| `VITE_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name for unsigned media uploads from the admin UI |
-| `VITE_CLOUDINARY_UPLOAD_PRESET` | Cloudinary unsigned upload preset |
+The frontend needs no env file — public config (Cloudinary upload settings for the admin UI) is served by the backend at `GET /api/config`, so the bundle stays config-free.
 
 `server/.env` (backend) — key settings:
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | Postgres connection string (defaults to the Docker DB on `:5433`) |
-| `PORT` | API port (default `3001`) |
-| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | HTTP Basic credentials for the admin UI and admin-only API routes |
-| `PARENT_API_KEY` | Shared secret for server-to-server session creation and signed result webhooks |
-| `ENGINE_PUBLIC_URL` | Public URL of this engine, used to build candidate launch URLs |
+| `DATABASE_URL` | SQL Server connection string (shared `gofive_assessments` DB on `localhost:1433`) |
+| `PORT` | API port (`3002` for standalone dev — the code default `3001` collides with mbti) |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | HTTP Basic credentials for the admin UI and admin-only API routes (unset = admin disabled, 503) |
+| `PARENT_API_KEY` | Shared secret (`X-API-Key`) for server-to-server calls and signed result webhooks |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_UPLOAD_PRESET` | Unsigned-upload settings served to the browser via `GET /api/config` |
+| `ENGINE_PUBLIC_URL` | Public URL of this engine, used to build candidate launch/view URLs |
 | `LAUNCH_TOKEN_TTL_MIN` | How long a one-time launch token stays valid (default `30`) |
 | `DEFAULT_TIME_LIMIT_MIN` | Fallback per-attempt time limit when none is specified (default `60`) |
+| `VIEW_LINK_TTL_MIN` / `VIEW_LINK_SECRET` | Read-only result-link TTL + signing secret (secret derives from `PARENT_API_KEY` when unset) |
 | `WEBHOOK_TIMEOUT_MS` / `WEBHOOK_MAX_ATTEMPTS` | Result-webhook delivery timeout and retry count |
 
 See `server/.env.example` for the full list.
@@ -98,7 +97,7 @@ Root (`package.json`):
 | Command | Description |
 | --- | --- |
 | `npm run dev` | Start Vite dev server (`:5175`) |
-| `npm run build` | Production build to `dist/` |
+| `npm run build` | Production build to `dist/` (the gateway builds with `--base=/english/`) |
 | `npm run preview` | Preview the production build (`:4175`) |
 | `npm test` | Run unit tests (Vitest, Node env) |
 | `npm run test:watch` | Vitest in watch mode |
@@ -109,10 +108,12 @@ Server (`server/package.json`):
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Start API with nodemon (port 3001) |
+| `npm run dev` | Start API with nodemon (`:3002` from `server/.env`) |
 | `npm start` | Start API |
-| `npm run migrate` | Apply SQL migrations |
-| `npm run seed` | Seed DB from `papers_export_1_full.json` |
+| `npm run migrate` | Apply Prisma migrations (`prisma migrate deploy`) |
+| `npm run migrate:dev` | Author a new migration in dev (`prisma migrate dev`) |
+| `npm run generate` / `npm run studio` | Prisma client codegen / Prisma Studio |
+| `npm run seed` | Seed DB from `papers_export_1_full.json` (or a JSON path passed as argument) |
 
 ## App architecture
 
@@ -171,7 +172,7 @@ Plain CSS in `src/styles/` (`colors-and-type.css` + `styles.css`) using CSS cust
 
 ## Backend
 
-Express + node-postgres. The Vite dev server proxies `/api/*` to `http://localhost:3001`. Postgres runs in Docker on port `5433` (mapped from container `5432`); credentials and DB name are in `server/docker-compose.yml`. pgAdmin is at `http://localhost:5050`.
+Express + Prisma over SQL Server / Azure SQL. The Vite dev server proxies `/api/*` to `http://localhost:3002`. The database is the **shared** `gofive_assessments` DB (SQL Server on `localhost:1433`, container defined in `../mbti/docker-compose.yml`); this app owns the migration ledger for the `english` + `shared` schemas — see `server/README.md` for the schema-ownership rules. The Express `app` is built in `server/src/app.js` and exported (the gateway mounts it at `/english`); `server/src/index.js` is the standalone entrypoint.
 
 ### Content routes (admin UI)
 
@@ -194,16 +195,16 @@ sequenceDiagram
     participant E as Engine API + DB<br/>(this app)
 
     Note over P,E: 1. Launch — server-to-server
-    P->>E: POST /api/sessions<br/>X-API-Key, paper_id, user_ref, callback_url, time_limit_min
-    E->>E: create attempt (pending)<br/>+ one-time launch_token (TTL 30 min)
-    E-->>P: launch_url = /exam?t=<token>
+    P->>E: POST /api/sessions<br/>X-API-Key, paperId, sourceSystem, externalUserId,<br/>callbackUrl, timeLimitMin
+    E->>E: create attempt (pending)<br/>+ one-time launch token (TTL 30 min)
+    E-->>P: launchUrl = /exam?t=<token>
 
-    Note over C,B: 2. Parent opens launch_url for the candidate
+    Note over C,B: 2. Parent opens launchUrl for the candidate
     P->>B: open /exam?t=<token> in a new tab
 
     Note over B,E: 3. Consume token (single-use)
     B->>E: POST /api/attempts/consume { token }
-    E->>E: validate + expire check → in_progress<br/>set expires_at = now + time_limit_min<br/>clear launch_token
+    E->>E: validate + expire check → in_progress<br/>set expires_at = now + time limit<br/>clear launch token
     E-->>B: attempt id + paper (taker view, no answer key)
 
     Note over C,E: 4. Take the exam
@@ -219,28 +220,34 @@ sequenceDiagram
     E-->>B: result snapshot (candidate sees score immediately)
 
     Note over E,P: 6. Result webhook — fire-and-forget, separate timeline
-    E->>P: POST callback_url<br/>X-Signature: sha256=<HMAC(PARENT_API_KEY)>
+    E->>P: POST callbackUrl<br/>X-Signature: sha256=<HMAC(PARENT_API_KEY)>
     P->>P: verify HMAC, store result
     P-->>E: 2xx (retried up to WEBHOOK_MAX_ATTEMPTS on failure)
 ```
 
-> The 30-min `launch_token` TTL only bounds the window **before** the candidate starts — it is checked once at consume, then the token is cleared. The exam timer (`expires_at`, e.g. 50 min) starts fresh at consume and is independent of the token TTL.
+> The 30-min launch-token TTL only bounds the window **before** the candidate starts — it is checked once at consume, then the token is cleared. The exam timer (`expires_at`, e.g. 50 min) starts fresh at consume and is independent of the token TTL.
+
+All parent-facing request/response fields are **camelCase** (`paperId`, `externalUserId`, `callbackUrl`, `launchUrl`, `completedAt`, …) and the terminal status on the wire is `completed` — the unified contract shared with the mbti engine (`toParentAttempt()` / `parentStatus()` in `server/src/routes/attempts.js` do the mapping; internal DB columns stay snake_case).
 
 Endpoints:
 
-- `POST /api/sessions` (parent-auth) — creates a `pending` attempt + a one-time `launch_token` and returns a `launch_url` (`/exam?t=…`) for the parent to open in the candidate's browser.
+- `POST /api/sessions` (parent-auth) — creates a `pending` attempt + a one-time launch token and returns a `launchUrl` (`/exam?t=…`) for the parent to open in the candidate's browser.
 - `POST /api/attempts/consume` — the candidate's browser trades the token for the attempt + the paper (taker view); marks it `in_progress`. Single-use.
-- `POST /api/attempts/anonymous` — public walk-in attempt (no token), defaults to the most recent paper.
+- `POST /api/attempts/anonymous` — public walk-in attempt (no token), defaults to the full paper.
+- `GET /api/attempts/:id` — fetch one attempt (parent sees the camelCase shape, status `completed` when submitted).
 - `PATCH /api/attempts/:id/answers` — autosave the answer map.
-- `POST /api/attempts/:id/submit` — score against the answer key, snapshot result + CEFR level, mark `submitted`, and fire the result webhook (idempotent).
+- `POST /api/attempts/:id/submit` — score against the answer key, snapshot result + CEFR level, mark it submitted, and fire the result webhook (idempotent).
 - `POST /api/attempts/:id/abandon` — discard an in-flight anonymous attempt (e.g. on refresh inside `/exam`).
 - `POST /api/attempts/:id/redeliver` (parent-auth) — re-send the result webhook.
+- `POST /api/attempts/:id/view-link` (parent-auth) + `GET /api/attempts/view?view_token=…` — mint/serve a signed, short-lived read-only result link (`/result?view_token=…`).
+- `GET /api/subjects/:source_system/:external_user_id/results` + `POST /api/subjects/:source_system/:external_user_id/view-link` (parent-auth) — per-person result history and a view link for the latest result.
+- `GET /api/attempts` (parent-auth) — list recent attempts.
 - `GET /api/admin/attempts` + `GET /api/admin/attempts/:id` (admin-auth) — the attempts history view in the admin UI.
 
 ### Scoring & webhooks
 
-- Server-side scoring lives in `server/src/scoring.js`; CEFR banding (correct-total → level 1–5 label) in `server/src/cefr.js`; row/shape helpers in `server/src/shape.js`.
-- On submit, the result snapshot is POSTed to the attempt's `callback_url` and signed with an HMAC over `PARENT_API_KEY` (`X-Signature: sha256=<hmac>`); delivery retries are bounded by the `WEBHOOK_*` settings (`server/src/webhook.js`).
+- Server-side scoring lives in `server/src/scoring.js`; CEFR banding (correct-total → level label; the short paper uses its own 3-band scale) in `server/src/cefr.js`; row/shape helpers + `paperVariant()` in `server/src/shape.js`.
+- On submit, the result snapshot is POSTed to the attempt's `callbackUrl` and signed with an HMAC over `PARENT_API_KEY` (`X-Signature: sha256=<hmac>`); delivery retries are bounded by the `WEBHOOK_*` settings (`server/src/webhook.js`). The webhook envelope (incl. `engineVersion`) is unified with the mbti engine — see `empeo-integration.html` at the repo root.
 
 ## Testing
 
@@ -255,7 +262,7 @@ For UI changes, manually verify the full flow: landing → audio check → liste
 ## Important repo notes
 
 - `english-test-remix/` (if present) is a Claude Design handoff bundle and is gitignored — treat as a read-only design reference.
-- `papers_export_1_full.json` is the seed source loaded into Postgres by the `seed` route / `npm run seed`. Changing it changes the seeded exam content.
+- `papers_export_1_full.json` (full paper) and `papers_export_2_short.json` (15-min short placement paper) are the seed sources loaded by the `seed` route / `npm run seed`. Both are **gitignored** (they contain answer keys); seeding happens out-of-band from a machine that has them.
 - `public/voice/*.mp3` filenames are referenced by `PART_AUDIO` in `src/data/exam.js`. Rename in lockstep.
 - Custom Gofive fonts live in `public/fonts/` and are declared in `src/styles/colors-and-type.css`.
 

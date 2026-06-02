@@ -25,7 +25,10 @@ npm run build           # builds both SPAs with --base=/english/ and /mbti/
 npm start               # gateway on :3000
 ```
 
-Open http://localhost:3000 — landing links to both exams.
+Open http://localhost:3000 — the landing page links to the full english test
+(`/english/exam/full`), the 15-min short placement test (`/english/exam/short`),
+and the mbti assessment (`/mbti/`). `/english/` remains a working alias for
+the full landing.
 
 > **อย่าใช้ `npm --prefix <dir> install`** — npm บน Windows จะยัด root package
 > (`"gofive-exams": "file:.."`) เข้าไปใน package.json/lockfile ของแอป แล้ว
@@ -60,7 +63,8 @@ apps) is a no-op, so standalone behaviour is unchanged.
   Per-engine `ENGINE_PUBLIC_URL` / `FRONTEND_URL` remain as overrides.
 - Postman collection: `postman-api-for-parent/` at the repo root
   (uses `{{base}}` = the gateway origin). Webhook-receiver reference code
-  lives in `empeo-integration.html` section 7.4.
+  (HMAC verification in C# and Node.js) lives in `empeo-integration.html`
+  section 7.4.
 
 ## Database
 

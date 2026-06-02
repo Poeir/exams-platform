@@ -4,6 +4,8 @@
 
 โปรเจกต์นี้ประกอบด้วย **frontend (React + Vite)**, **backend API (Express)** และ **Azure SQL / SQL Server** (เข้าถึงผ่าน **Prisma ORM**) สำหรับเก็บผลการทำแบบทดสอบ
 
+> แอปนี้อยู่ที่ `apps/mbti` ใน monorepo **gofive-exams** และตอน deploy จะถูก mount ที่ `/mbti` หลัง gateway (ดู `README.md` ที่ root ของ repo) — ใช้ **ฐานข้อมูลร่วม `gofive_assessments`** กับ english engine โดย mbti เป็นเจ้าของเฉพาะ schema `mbti` ผ่าน SQL scripts (ห้ามรัน `prisma migrate` กับฐานร่วม) ทุกอย่างด้านล่างยังรันแบบ standalone สำหรับ dev ได้ตามเดิม
+
 ---
 
 ## Tech Stack
@@ -40,8 +42,8 @@ docker --version
 ### 1. Clone repo และเข้าโฟลเดอร์
 
 ```powershell
-git clone <repo-url> mbti-personality
-cd mbti-personality
+git clone <repo-url> gofive-exams
+cd gofive-exams\apps\mbti
 ```
 
 ### 2. ติดตั้ง dependencies
@@ -58,17 +60,19 @@ npm install
 Copy-Item .env.example .env
 ```
 
-ตัวอย่างค่าใน `.env` (ค่า default ใช้งานได้กับ docker-compose ที่ให้มา):
+ตัวอย่างค่าใน `.env` (ค่า default ใช้งานได้กับ docker-compose ที่ให้มา — จำเป็นจริง ๆ มีแค่ `DATABASE_URL` ที่ชี้ฐานร่วม `gofive_assessments`):
 
 ```env
-DATABASE_URL=sqlserver://localhost:1433;database=mbti_personality;user=sa;password=Your_password123;encrypt=true;trustServerCertificate=true
-PORT=3001
-FRONTEND_URL=http://localhost:5174
-PARENT_API_KEY=dev-parent-key
-ATTEMPT_TTL_MINUTES=120
+DATABASE_URL=sqlserver://localhost:1433;database=gofive_assessments;user=sa;password=Your_password123;encrypt=true;trustServerCertificate=true
+# ค่าอื่นมี dev default ใน server/config.js — override ได้ตามต้องการ:
+# PORT=3001
+# FRONTEND_URL=http://localhost:5174
+# PARENT_API_KEY=dev-parent-key
+# ATTEMPT_TTL_MINUTES=120
+# VIEW_LINK_TTL_MIN=15 / VIEW_LINK_SECRET= / WEBHOOK_TIMEOUT_MS=8000 / WEBHOOK_MAX_ATTEMPTS=5
 ```
 
-> **หมายเหตุ:** Prisma CLI (`db:migrate`, `db:generate`) อ่าน `DATABASE_URL` จาก `.env` อัตโนมัติ ส่วนตัว Express server ไม่ได้โหลด `.env` — แต่ `server/db.js` ส่ง URL จาก `server/config.js` ให้ Prisma Client โดยตรง จึงใช้งานได้กับ default ที่ฝังไว้
+> **หมายเหตุ:** ทั้ง Prisma CLI และตัว Express server อ่าน `.env` — npm scripts รัน server ด้วย `node --env-file-if-exists=.env` (ค่า fallback สำหรับ dev ฝังไว้ใน `server/config.js`)
 >
 > สำหรับ **Azure SQL จริง** ให้เปลี่ยน `DATABASE_URL` เป็น connection string ของ instance นั้น เช่น
 > `sqlserver://<server>.database.windows.net:1433;database=<db>;user=<user>;password=<pass>;encrypt=true;trustServerCertificate=false`
@@ -92,21 +96,20 @@ docker compose ps
 
 ### 5. สร้าง schema + Prisma Client
 
-ครั้งแรก (สร้าง migration จาก `prisma/schema.prisma` และสร้างฐานข้อมูลให้ถ้ายังไม่มี):
+ฐานข้อมูล `gofive_assessments` เป็น**ฐานร่วม** — แบ่งความเป็นเจ้าของ schema ชัดเจน:
+
+- schema `english` + `shared` (รวมตาราง `shared.subjects`) — english เป็นเจ้าของ migration ledger: รัน `npm run migrate` จาก `../english/server` (ดู `../english/server/README.md`)
+- schema `mbti` — apply ด้วย **SQL scripts** ใน `prisma/` ตามลำดับ: `mbti-tables.sql` → `phase2-transfer.sql` → `merge-results.sql` → `add-webhook-delivery.sql` (รันผ่าน Azure Data Studio / `sqlcmd`)
+
+> **ห้ามรัน `npm run db:migrate` / `db:migrate:dev` กับฐานร่วม** — `prisma/schema.prisma` ของ mbti เป็นแบบ introspection ไม่ใช่ source of truth ของ DDL (scripts ใน package.json คงไว้สำหรับงาน schema เฉพาะทางเท่านั้น)
+
+จากนั้น generate Prisma Client:
 
 ```powershell
-npm run db:migrate:dev
+npm run db:generate
 ```
 
-> ถ้า Prisma ฟ้องว่าฐานข้อมูล `mbti_personality` ไม่มี ให้สร้างก่อนด้วย Azure Data Studio (`CREATE DATABASE mbti_personality;`) แล้วรันซ้ำ
-
-ในสภาพแวดล้อม production/CI ที่มี migration อยู่แล้ว ใช้:
-
-```powershell
-npm run db:migrate
-```
-
-จะสร้างตาราง `assessment_subjects`, `assessment_attempts`, `assessment_results`
+ตารางที่ mbti ใช้: `shared.subjects` (mapping ตัวตนจากระบบแม่) และ `mbti.attempts` (attempt + ผลที่คำนวณแล้ว — ตาราง results เดิมถูก merge เข้ามาแล้ว)
 
 ### 6. รัน API server (terminal 1)
 
@@ -136,10 +139,10 @@ npm run api:smoke
 ## Troubleshooting
 
 - **Port ชนกัน (1433, 3001, 5174):** แก้ไขใน `docker-compose.yml` / `vite.config.js` / `.env`
-- **`npm run db:migrate` ฟ้อง connection refused:** รอ SQL Server container start ให้เสร็จก่อน (`docker compose logs sqlserver`) — Azure SQL Edge ใช้เวลา warm up สักครู่
+- **Connection refused ตอนรัน migration/scripts:** รอ SQL Server container start ให้เสร็จก่อน (`docker compose logs sqlserver`) — Azure SQL Edge ใช้เวลา warm up สักครู่
 - **Login failed / password ไม่ผ่าน:** SQL Server บังคับ password ซับซ้อน (ตัวใหญ่+เล็ก+ตัวเลข ≥ 8 ตัว) — ถ้าเปลี่ยน `MSSQL_SA_PASSWORD` ต้องแก้ `DATABASE_URL` ให้ตรงกัน
 - **Frontend เรียก API ไม่ได้:** ตรวจสอบว่า server รันอยู่ที่ port 3001 และ Vite proxy ใน `vite.config.js` ยังถูกต้อง
-- **รีเซ็ตฐานข้อมูล:** `docker compose down -v` แล้ว `docker compose up -d` ใหม่ (ลบ volume `mbti_sqlserver_data`) จากนั้นรัน `npm run db:migrate:dev` อีกครั้ง
+- **รีเซ็ตฐานข้อมูล:** `docker compose down -v` แล้ว `docker compose up -d` ใหม่ จากนั้น apply schema ใหม่ตามขั้นตอนข้อ 5 (english migrations + mbti SQL scripts)
 
 ---
 
@@ -148,14 +151,13 @@ npm run api:smoke
 | Script | คำอธิบาย |
 | --- | --- |
 | `npm run dev` | รัน Vite dev server (port 5174) |
-| `npm run server` | รัน Express API พร้อม watch mode |
+| `npm run server` | รัน Express API พร้อม watch mode (port 3001) |
 | `npm run server:start` | รัน API แบบ production |
 | `npm run db:generate` | generate Prisma Client จาก `prisma/schema.prisma` |
-| `npm run db:migrate` | apply migrations ที่มีอยู่ (production/CI) |
-| `npm run db:migrate:dev` | สร้าง + apply migration ใหม่จาก schema (dev) |
+| `npm run db:migrate` / `db:migrate:dev` | ⚠️ **ห้ามใช้กับฐานร่วม** — schema `mbti` apply ผ่าน SQL scripts ใน `prisma/` |
 | `npm run db:studio` | เปิด Prisma Studio (GUI ดู/แก้ข้อมูล) |
 | `npm run api:smoke` | ทดสอบ end-to-end ผ่าน API |
-| `npm run build` | build frontend ไปยัง `dist/` |
+| `npm run build` | build frontend ไปยัง `dist/` (gateway build ด้วย `--base=/mbti/`) |
 | `npm run preview` | preview built output |
 
 ไม่มี test suite, linter, หรือ type-checker — รัน `npm run build` ก่อน handoff เพื่อจับ syntax errors
@@ -165,11 +167,11 @@ npm run api:smoke
 ## Project Structure
 
 ```
-mbti-personality/
+apps/mbti/
 ├── src/                      # Frontend React app
-│   ├── App.jsx               # Global state + in-memory screen routing
+│   ├── App.jsx               # Global state + in-memory screen routing + DevPanel
 │   ├── components.jsx        # Shared UI (Mascot, Icon, Loading, ProgressDots, ...)
-│   ├── data.js               # SCENARIOS (คำถาม 14 ข้อ) + TYPES (16 ประเภท MBTI)
+│   ├── data.js               # SCENARIOS (19 ข้อ — ถามจริง 18 ข้อ/รอบ) + TYPES (16 ประเภท MBTI)
 │   ├── main.jsx              # React entry
 │   ├── screens/
 │   │   ├── Landing.jsx       # หน้าแรก + หน้าวัตถุประสงค์
@@ -183,25 +185,31 @@ mbti-personality/
 │   │   ├── resultContract.js # schema ของผล + การ build payload
 │   │   ├── resultExport.js   # ส่งผลผ่าน transport (mock/service)
 │   │   ├── assessmentApi.js  # client → backend API
-│   │   └── mockParentApi.js  # mock parent website (dev only)
+│   │   ├── mockParentApi.js  # mock parent website (dev only)
+│   │   └── base.js           # base-path helpers (standalone '' / gateway '/mbti')
 │   └── styles/
 │       ├── app.css           # layout + screen styles
 │       ├── colors_and_type.css  # Gofive design tokens
 │       └── fonts/            # Gofive custom font files
 ├── server/                   # Express backend
-│   ├── index.js              # routes + middleware
+│   ├── app.js                # Express app (routes + middleware) — export ให้ gateway mount
+│   ├── index.js              # standalone entrypoint (listen :3001 + graceful shutdown)
 │   ├── assessmentService.js  # business logic (create attempt, complete, ...)
 │   ├── db.js                 # Prisma Client (shared instance)
-│   ├── config.js             # env config
-│   ├── security.js           # token hash + safe compare
+│   ├── config.js             # env config (resolve ครั้งเดียวตอน boot)
+│   ├── security.js           # token hash + safe compare + view-link signing
+│   ├── webhook.js            # ส่งผลไป callbackUrl ของระบบแม่ (HMAC X-Signature)
+│   ├── logger.js             # structured logging
 │   ├── httpError.js          # error helper
 │   └── smokeTest.js          # end-to-end smoke test
 ├── prisma/
-│   ├── schema.prisma         # data model (provider=sqlserver) + 3 models
-│   └── migrations/           # generated migrations (prisma migrate)
-├── public/mascots/           # mascot PNGs (เรียกผ่าน /mascots/*.png)
-├── docs/integration-contract.md  # API contract กับ parent website
-├── docker-compose.yml        # SQL Server (Azure SQL Edge) service
+│   ├── schema.prisma         # data model (provider=sqlserver) — introspection-style, ไม่ใช่ DDL source of truth
+│   └── *.sql                 # SQL scripts สำหรับ schema `mbti` (รันตามลำดับ — ดู Setup ข้อ 5)
+├── public/mascots/           # mascot PNGs (อ้างอิงผ่าน withBase('/mascots/*.png'))
+├── docs/
+│   ├── integration-contract.md  # API contract กับ parent website
+│   └── openapi.yaml          # OpenAPI spec (เสิร์ฟที่ /api/docs)
+├── docker-compose.yml        # SQL Server (Azure SQL Edge) service — ใช้ร่วมกับ english
 ├── vite.config.js            # dev port 5174 + /api proxy
 ├── CLAUDE.md                 # คำแนะนำสำหรับ Claude Code
 └── AGENTS.md                 # repository guidelines
@@ -233,14 +241,13 @@ landing → purpose → quiz → loading-result → result
 `scoreAnswers(answers)` ใน `src/lib/scoring.js` คำนวณคะแนน 4 แกน (E/I, S/N, T/F, J/P):
 - ผลรวม signed sums ของ weight (`w`) จากทุกคำตอบ
 - slider ใช้สัดส่วน `(distribution[id] / 100) * 2 * w` (×2 เพื่อให้น้ำหนักเทียบเท่า mcq)
-- เก็บ **facets** 13 ค่า (initiating, deepFocus, empathetic, ...) แยกต่างหาก
+- เก็บ **facets** 16 ค่า (initiating, deepFocus, empathetic, ...) แยกต่างหาก
 - กำหนด **confidence**: `midzone` (<55%), `slight` (55–65%), `clear` (65–80%), `veryClear` (80%+)
 
-### Persistence (3 ตาราง)
+### Persistence (2 ตาราง บนฐานร่วม `gofive_assessments`)
 
-- `assessment_subjects` — map parent identity → internal subject (source_system + external_user_id)
-- `assessment_attempts` — แต่ละครั้งของการทำแบบทดสอบ + hash ของ opaque token
-- `assessment_results` — ผล MBTI ที่ backend คำนวณซ้ำ (ไม่ trust ค่าจาก browser)
+- `shared.subjects` — map parent identity → internal subject (source_system + external_user_id) — ใช้ร่วมกับ english engine (migration ledger เป็นของ english)
+- `mbti.attempts` — แต่ละครั้งของการทำแบบทดสอบ + hash ของ opaque token + **ผล MBTI ที่ backend คำนวณซ้ำ** (ตาราง results เดิมถูก merge เข้ามาด้วย `merge-results.sql`; คอลัมน์ webhook delivery เพิ่มโดย `add-webhook-delivery.sql`)
 
 ---
 
@@ -270,9 +277,9 @@ sequenceDiagram
 
     rect rgb(245, 91, 47, 0.08)
     Note over ParentBE,DB: สร้าง attempt (server-to-server, ต้องมี X-API-Key)
-    ParentBE->>API: POST /api/v1/assessment-attempts<br/>X-API-Key + { sourceSystem, externalUserId, email, displayName }
-    API->>DB: upsert assessment_subjects<br/>(source_system + external_user_id)
-    API->>DB: insert assessment_attempts<br/>(status='started', hash ของ token)
+    ParentBE->>API: POST /api/v1/assessment-attempts<br/>X-API-Key + { sourceSystem, externalUserId, email, displayName, callbackUrl }
+    API->>DB: upsert shared.subjects<br/>(source_system + external_user_id)
+    API->>DB: insert mbti.attempts<br/>(status='started', hash ของ token)
     API-->>ParentBE: 201 { id, attemptToken, launchUrl }
     end
 
@@ -286,8 +293,9 @@ sequenceDiagram
     Note over FE,DB: ส่งคำตอบ (ใช้ attempt token เป็น Bearer)
     FE->>API: POST /api/v1/assessment-attempts/:attemptId/complete<br/>Authorization: Bearer <token> + { version, responses }
     API->>API: scoreResponses(responses)<br/>คำนวณ MBTI ใหม่ (ไม่เชื่อ browser)
-    API->>DB: insert assessment_results + update attempt='completed'
+    API->>DB: update mbti.attempts<br/>(บันทึกผล + status='completed')
     API-->>FE: 201 { id (resultId), result, ... }
+    API--)ParentBE: POST callbackUrl (webhook)<br/>X-Signature: sha256=<HMAC(PARENT_API_KEY)>
     end
 
     FE->>API: GET /api/v1/assessment-results/:resultId<br/>Authorization: Bearer <token>
@@ -318,7 +326,7 @@ sequenceDiagram
 
 ## API Contract
 
-ดูรายละเอียดเต็มที่ [`docs/integration-contract.md`](docs/integration-contract.md)
+ดูรายละเอียดเต็มที่ [`docs/integration-contract.md`](docs/integration-contract.md) และ OpenAPI spec ที่ [`docs/openapi.yaml`](docs/openapi.yaml) (Swagger UI ที่ `http://localhost:3001/api/docs`) — ทุก field ฝั่ง parent เป็น **camelCase** และ status สุดท้ายบน wire คือ `completed` (unified contract ร่วมกับ english engine; เอกสารฝั่ง empeo อยู่ที่ `empeo-integration.html` ที่ root ของ repo)
 
 ### Parent website สร้าง attempt
 
@@ -327,10 +335,12 @@ POST /api/v1/assessment-attempts
 X-API-Key: <PARENT_API_KEY>
 Content-Type: application/json
 
-{ "sourceSystem": "main_web", "externalUserId": "usr_123", "email": "...", "displayName": "..." }
+{ "sourceSystem": "main_web", "externalUserId": "usr_123", "email": "...", "displayName": "...", "callbackUrl": "https://parent.example/webhooks/mbti" }
 ```
 
 Response มี `launchUrl` ที่มี `attempt_token` (opaque) ใน query — frontend จะลบ token ออกจาก URL ทันทีและเก็บใน `sessionStorage`
+
+ถ้าส่ง `callbackUrl` มา ระบบจะ POST ผลกลับไปเมื่อทำเสร็จ (webhook, ลงนาม HMAC ใน header `X-Signature` ด้วย `PARENT_API_KEY` — envelope เดียวกับ english engine) และ retry ได้ผ่าน `POST /api/v1/assessment-attempts/:attemptId/redeliver`
 
 ### Frontend ส่งคำตอบ
 
@@ -376,7 +386,7 @@ DevPanel จะหายไปอัตโนมัติใน production build
 
 - `src/styles/app.css` reuse Venio token name **`--color-bluetiful`** เก็บ empeo orange `#F05B2F` — อย่าเปลี่ยนชื่อโดยไม่ sweep ทั้งไฟล์
 - Custom Gofive font weights (Text=400, Medium=500, Semi-Bold=600, Bold=700) + IBM Plex Sans Thai fallback อยู่ใน `src/styles/fonts/`
-- Mascot PNGs อ้างอิงด้วย absolute path เช่น `/mascots/chart.png`
+- Mascot PNGs อยู่ใน `public/mascots/` และอ้างอิงผ่าน `withBase('/mascots/chart.png')` จาก `src/lib/base.js` — เพื่อให้ทำงานได้ทั้ง standalone และตอน mount ที่ `/mbti` หลัง gateway
 
 ---
 

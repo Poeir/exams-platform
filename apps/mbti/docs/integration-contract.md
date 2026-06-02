@@ -28,12 +28,17 @@ Start SQL Server (Azure SQL Edge) with Docker:
 docker compose up -d sqlserver
 ```
 
-Configure the backend in PowerShell, migrate the database, and start the API:
+Configure the backend (or use `.env` — the npm scripts load it via
+`--env-file-if-exists`), apply the schema, and start the API:
 
 ```powershell
-$env:DATABASE_URL='sqlserver://localhost:1433;database=mbti_personality;user=sa;password=Your_password123;encrypt=true;trustServerCertificate=true'
+$env:DATABASE_URL='sqlserver://localhost:1433;database=gofive_assessments;user=sa;password=Your_password123;encrypt=true;trustServerCertificate=true'
 $env:PARENT_API_KEY='dev-parent-key'
-npm run db:migrate:dev
+# Schema: english owns the `english` + `shared` ledgers (run `npm run migrate`
+# in ../english/server); the `mbti` schema is applied via the SQL scripts in
+# prisma/ in order (mbti-tables.sql → phase2-transfer.sql → merge-results.sql
+# → add-webhook-delivery.sql). Never run `db:migrate`/`db push` from here.
+npm run db:generate
 npm run server
 ```
 
@@ -53,17 +58,19 @@ npm run api:smoke
 
 ## Database Tables
 
-Schema: `prisma/schema.prisma` (migrations generated under `prisma/migrations/`)
+Model: `prisma/schema.prisma` (introspection-style — the DDL source of truth
+is the SQL scripts in `prisma/`). Two tables on the shared
+`gofive_assessments` database:
 
 ```text
-assessment_subjects
-- maps a parent identity to an internal MBTI subject
+shared.subjects
+- maps a parent identity (source_system + external_user_id) to an internal
+  subject — shared with the english engine (english owns the migration ledger)
 
-assessment_attempts
-- stores one test run and a hash of its opaque completion token
-
-assessment_results
-- stores server-calculated MBTI results and responses for one attempt
+mbti.attempts
+- stores one test run, a hash of its opaque completion token, the
+  server-calculated MBTI result + responses (the former results table was
+  folded in by merge-results.sql), and webhook-delivery bookkeeping
 - JSON columns are NVARCHAR(MAX) (SQL Server has no native JSON type)
 ```
 
@@ -85,9 +92,16 @@ Content-Type: application/json
   "sourceSystem": "main_web",
   "externalUserId": "usr_123",
   "email": "alice@example.com",
-  "displayName": "Alice"
+  "displayName": "Alice",
+  "callbackUrl": "https://parent.example/webhooks/mbti"
 }
 ```
+
+`callbackUrl` is optional — when present, the scored result is POSTed there on
+completion (HMAC-signed `X-Signature: sha256=<hmac>` over `PARENT_API_KEY`,
+same envelope as the english engine; see `empeo-integration.html` at the repo
+root). Redeliver with `POST /api/v1/assessment-attempts/:attemptId/redeliver`
+(X-API-Key).
 
 Response:
 

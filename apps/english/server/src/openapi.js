@@ -299,6 +299,24 @@ const paths = {
     },
   },
 
+  '/api/config': {
+    get: {
+      tags: ['Meta'],
+      summary: 'Public runtime config for the frontend',
+      description:
+        'Cloudinary unsigned-upload settings served at load time so no configuration is baked into the static bundle. Values are public by design; `null` when the env vars are unset.',
+      responses: {
+        200: jsonResp({
+          type: 'object',
+          properties: {
+            cloudName: { type: 'string', nullable: true },
+            uploadPreset: { type: 'string', nullable: true },
+          },
+        }),
+      },
+    },
+  },
+
   '/api/papers': {
     get: {
       tags: ['Papers'],
