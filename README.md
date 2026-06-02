@@ -1,0 +1,82 @@
+# gofive-exams
+
+ONE container hosting both Gofive assessment engines behind a path-routing
+gateway, sharing one SQL Server database:
+
+```
+                    :3000 (gateway/index.js)
+   /english/*  →  apps/english  — English proficiency test (API + SPA)
+   /mbti/*     →  apps/mbti     — MBTI workplace assessment (API + SPA)
+   /api/health →  combined health (pings the DB through both engines)
+   /           →  landing page
+```
+
+Each app keeps its own `package.json`, `node_modules`, and Prisma client.
+The apps export their Express `app` (english `server/src/app.js`, mbti
+`server/app.js`); the gateway mounts them under the prefixes and is the only
+listener. Express strips the mount prefix, so app code never sees `/english`.
+
+## Quick start (local)
+
+```bash
+npm run install:all     # root + both apps + english server
+cp .env.example .env    # point DATABASE_URL at your SQL Server
+npm run build           # builds both SPAs with --base=/english/ and /mbti/
+npm start               # gateway on :3000
+```
+
+Open http://localhost:3000 — landing links to both exams.
+
+> **อย่าใช้ `npm --prefix <dir> install`** — npm บน Windows จะยัด root package
+> (`"gofive-exams": "file:.."`) เข้าไปใน package.json/lockfile ของแอป แล้ว
+> Docker build จะพังด้วย EUSAGE. ใช้ `npm run install:all` หรือ `cd` เข้าไปติดตั้ง.
+
+## Standalone dev (per app, hot reload)
+
+The apps still run exactly as before the merge:
+
+```bash
+# english: server :3002 + Vite
+cd apps/english/server && npm run dev
+cd apps/english && npm run dev
+
+# mbti: server :3001 + Vite :5174
+cd apps/mbti && npm run server
+cd apps/mbti && npm run dev
+```
+
+At base `/` (dev default) every base-path helper (`src/lib/base.js` in both
+apps) is a no-op, so standalone behaviour is unchanged.
+
+## Parent-system contract
+
+- One key for both engines: header `X-API-Key` = env `PARENT_API_KEY`.
+- english endpoints live under `<host>/english/api/...`,
+  mbti under `<host>/mbti/api/v1/...` — see each app's Swagger at
+  `/english/api/docs` and `/mbti/api/docs`.
+- `ENGINE_PUBLIC_URL` / `FRONTEND_URL` must include the prefix
+  (e.g. `https://exam.gofive.co.th/english`) — they are used to mint
+  `launch_url` / view links handed to the parent site.
+- Postman collection + webhook listener: `../mock-parent/` (uses `{{base}}` =
+  the gateway origin).
+
+## Database
+
+Shared DB (`gofive_assessments` local / `examo_*` on Azure):
+- english owns the migration ledger for the `english` + `shared` schemas
+  (`apps/english/server`: `npm run migrate` + `npm run seed`).
+- mbti owns the `mbti` schema via SQL scripts only (`apps/mbti/prisma/`:
+  mbti-tables.sql → phase2-transfer.sql → merge-results.sql →
+  add-webhook-delivery.sql) — **never** run `migrate dev`/`db push` from mbti.
+- No auto-migration in the image: apply schema out-of-band before deploying
+  against a fresh database.
+
+## Deploy (platformdio)
+
+- Service port `3000`, Dockerfile `Dockerfile`, working dir `.`,
+  health checks `/api/health`.
+- Env: `DATABASE_URL`, `PARENT_API_KEY`, `VIEW_LINK_SECRET` (secrets);
+  `ENGINE_PUBLIC_URL`, `FRONTEND_URL` (public URLs incl. prefix); english
+  extras `ADMIN_USERNAME`/`ADMIN_PASSWORD` (secret), `CLOUDINARY_*`.
+- `papers_export_1_full.json` is gitignored (answer keys) — seeding happens
+  out-of-band from a machine that has it.

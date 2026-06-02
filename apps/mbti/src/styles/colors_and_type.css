@@ -1,0 +1,397 @@
+/* IBM Plex Sans Thai — fallback when Gofive is unavailable */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap');
+
+/* ============================================================
+   Venio Design System — Colors & Type Tokens
+   Source: DESIGN-gofive-venio-v2.md
+   ============================================================ */
+
+/* ---------- Gofive font (bundled .woff + local() fallback) ---------- */
+@font-face {
+  font-family: 'Gofive';
+  src: local('Gofive'), local('Gofive-Regular'), local('Gofive Text'),
+       url('fonts/Gofive-Text.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gofive';
+  src: local('Gofive Medium'), local('Gofive-Medium'),
+       url('fonts/Gofive-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gofive';
+  src: local('Gofive SemiBold'), local('Gofive-SemiBold'), local('Gofive Semibold'),
+       url('fonts/Gofive-Semi_Bold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gofive';
+  src: local('Gofive Bold'), local('Gofive-Bold'),
+       url('fonts/Gofive-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ===== Brand primary — Venio ===== */
+  --color-bluetiful: #116DFC;       /* Primary CTA, links, eyebrow */
+  --color-united-blue: #418AFD;     /* Secondary blue, illustrations */
+  --color-malibu: #70A7FD;          /* Tertiary, soft accents, eyebrow on dark */
+  --color-zircon: #E7F0FF;          /* Inline tag pill bg, hover bg */
+  --color-ghost-white: #F5F9FF;     /* Soft step-in section bg */
+
+  /* ===== Surface ===== */
+  --color-white: #FFFFFF;
+  --color-eerie-black: #1A1A1A;     /* Dark spotlight section */
+  --color-soft-cloud: #F6F6F8;      /* Alt section bg, filled inputs */
+  --color-wild-sand: #F5F5F5;       /* Disabled surface */
+
+  /* ===== Neutral scale — Light Text (12 steps) ===== */
+  --color-charcoal: #1C1C22;        /* 12 — primary heading */
+  --color-iron: #383842;            /* 11 — strong heading */
+  --color-lead: #525260;            /* 10 — body default */
+  --color-anchor: #6A6A7C;          /*  9 — secondary body */
+  --color-porpoise: #838395;        /*  8 — muted, metadata */
+  --color-pewter: #A5A5B6;          /*  7 — placeholder */
+  --color-flint: #BCBCC8;           /*  6 — disabled, dividers strong */
+  --color-silver: #D2D2DA;          /*  5 — borders medium / dark-section body */
+  --color-smoke: #DFDFE8;           /*  4 — input border, table divider */
+  --color-cloud: #ECECF1;           /*  3 — card border, hairline */
+  /* (2 = soft-cloud, 1 = white above) */
+
+  /* ===== Dark-section text/surface ===== */
+  --color-card-dark: #383842;       /* Card surface inside #1A1A1A */
+  --color-silver-dark: #D2D2DA;     /* Body text on dark */
+
+  /* ===== Decorative accents (icons / illustrations only) ===== */
+  --color-shamrock: #21CE9B;        /* Success, growth */
+  --color-electric-violet: #7E4FFE;
+  --color-cream-can: #F7CA51;
+  --color-case: #EFC439;
+
+  /* ===== Status ===== */
+  --color-error: #DE3A45;
+  --color-success: var(--color-shamrock);
+
+  /* ===== Multi-brand primary swaps ===== */
+  --brand-venio: #116DFC;
+  --brand-empeo: #F05B2F;
+  --brand-etaxgo: #EB1C26;
+  --brand-salesbear: #FFC505;
+
+  /* ===== Semantic role tokens ===== */
+  --bg-page: var(--color-white);
+  --bg-spotlight: var(--color-eerie-black);
+  --bg-step-in: var(--color-ghost-white);
+  --bg-alt: var(--color-soft-cloud);
+
+  --fg-heading: var(--color-charcoal);
+  --fg-body: var(--color-lead);
+  --fg-muted: var(--color-porpoise);
+  --fg-eyebrow: var(--color-bluetiful);
+  --fg-on-dark: var(--color-white);
+  --fg-on-dark-muted: var(--color-silver-dark);
+
+  --border-hairline: var(--color-cloud);
+  --border-medium: var(--color-smoke);
+  --border-strong: var(--color-silver);
+  --border-dark: rgba(255, 255, 255, 0.08);
+
+  /* ===== Typography ===== */
+  --font-sans: "Gofive", "IBM Plex Sans Thai", "Sarabun",
+               -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Type ladder — sizes / line-heights (v2: body 16/24) */
+  --fs-display-h1: 48px;     --lh-display-h1: 72px;   /* 700 */
+  --fs-h1: 32px;             --lh-h1: 44px;           /* 600 */
+  --fs-h2: 26px;             --lh-h2: 36px;           /* 600 */
+  --fs-h4: 20px;             --lh-h4: 28px;           /* 600 */
+  --fs-h5: 18px;             --lh-h5: 26px;           /* 600 */
+  --fs-title: 16px;          --lh-title: 24px;        /* 500/600/700 */
+  --fs-body: 16px;           --lh-body: 24px;         /* 500 / 400 */
+  --fs-eyebrow: 14px;        --lh-eyebrow: 20px;      /* 500 */
+  --fs-small: 12px;          --lh-small: 18px;        /* 400 */
+
+  --fw-text: 400;
+  --fw-medium: 500;
+  --fw-semi: 600;
+  --fw-bold: 700;
+
+  /* ===== Spacing scale ===== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+  --space-40: 160px;
+
+  /* ===== Radii ===== */
+  --radius-micro: 4px;
+  --radius-input: 8px;
+  --radius-cta: 12px;        /* v2 — all CTAs */
+  --radius-card: 12px;
+  --radius-featured: 16px;
+  --radius-hero: 20px;
+  --radius-pill: 9999px;
+
+  /* ===== Shadows (the only ones) ===== */
+  --shadow-s2: 0 8px 20px rgba(0, 0, 0, 0.04);
+  --shadow-brand-glow: 0 8px 20px rgba(17, 109, 252, 0.16);
+  --shadow-focus: 0 0 0 3px rgba(17, 109, 252, 0.16);
+
+  /* ===== Layout ===== */
+  --canvas-desktop: 1920px;
+  --content-max: 1200px;
+  --content-pad: 24px;
+  --mobile-cta-width: 280px;
+}
+
+/* ============================================================
+   Base + Semantic helpers
+   ============================================================ */
+
+html, body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  letter-spacing: 0;
+  color: var(--fg-body);
+  background: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings */
+.h-display, h1.display {
+  font: var(--fw-bold) var(--fs-display-h1) / var(--lh-display-h1) var(--font-sans);
+  color: var(--fg-heading);
+  letter-spacing: 0;
+  margin: 0;
+}
+.h1, h1 {
+  font: var(--fw-semi) var(--fs-h1) / var(--lh-h1) var(--font-sans);
+  color: var(--fg-heading);
+  letter-spacing: 0;
+  margin: 0;
+}
+.h2, h2 {
+  font: var(--fw-semi) var(--fs-h2) / var(--lh-h2) var(--font-sans);
+  color: var(--fg-heading);
+  letter-spacing: 0;
+  margin: 0;
+}
+.h4, h4 {
+  font: var(--fw-semi) var(--fs-h4) / var(--lh-h4) var(--font-sans);
+  color: var(--fg-heading);
+  letter-spacing: 0;
+  margin: 0;
+}
+.h5, h5 {
+  font: var(--fw-semi) var(--fs-h5) / var(--lh-h5) var(--font-sans);
+  color: var(--fg-heading);
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.title-bold   { font: var(--fw-bold)   var(--fs-title)/var(--lh-title) var(--font-sans); }
+.title-strong { font: var(--fw-semi)   var(--fs-title)/var(--lh-title) var(--font-sans); }
+.title        { font: var(--fw-medium) var(--fs-title)/var(--lh-title) var(--font-sans); }
+
+.body  { font: var(--fw-medium) var(--fs-body)/var(--lh-body) var(--font-sans); color: var(--fg-body); }
+.text  { font: var(--fw-text)   var(--fs-body)/var(--lh-body) var(--font-sans); color: var(--fg-body); }
+.small { font: var(--fw-text)   var(--fs-small)/var(--lh-small) var(--font-sans); color: var(--fg-muted); }
+
+/* v2 Eyebrow — plain text, no BG, no UPPERCASE */
+.eyebrow {
+  font: var(--fw-medium) var(--fs-eyebrow)/var(--lh-eyebrow) var(--font-sans);
+  color: var(--fg-eyebrow);
+  letter-spacing: 0;
+  text-transform: none;
+  margin: 0 0 var(--space-4);
+}
+.eyebrow.on-dark { color: var(--color-malibu); }
+
+/* Container / Layout */
+.container {
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: var(--content-pad);
+}
+
+/* ============================================================
+   Buttons (v2 — all 12px radius)
+   ============================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font: var(--fw-semi) var(--fs-title)/var(--lh-title) var(--font-sans);
+  padding: 12px 24px;
+  border-radius: var(--radius-cta);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0;
+  min-height: 48px;
+}
+
+.btn-primary {
+  background: var(--color-bluetiful);
+  color: var(--color-white);
+}
+.btn-primary:hover {
+  background: #2A7DFD;
+  box-shadow: var(--shadow-brand-glow);
+}
+.btn-primary:active { opacity: 0.9; }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-charcoal);
+  border-color: var(--color-smoke);
+}
+.btn-secondary:hover { background: var(--color-soft-cloud); }
+.btn-secondary.on-dark {
+  background: transparent;
+  color: var(--color-white);
+  border-color: var(--color-white);
+}
+.btn-secondary.on-dark:hover { background: rgba(255,255,255,0.06); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-bluetiful);
+  padding: 8px 12px;
+  min-height: auto;
+}
+.btn-ghost:hover { background: var(--color-zircon); }
+
+.btn-dark-inverse {
+  background: var(--color-white);
+  color: var(--color-charcoal);
+}
+.btn-dark-inverse:hover { background: #F4F6FA; }
+
+.btn-large { padding: 14px 28px; min-height: 52px; }
+
+/* Mobile CTA fixed width (v2) */
+@media (max-width: 640px) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-dark-inverse {
+    width: var(--mobile-cta-width);
+    margin-inline: auto;
+  }
+}
+
+/* ============================================================
+   Inline tag pill (NOT for eyebrows)
+   ============================================================ */
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-zircon);
+  color: var(--color-bluetiful);
+  font: var(--fw-medium) var(--fs-small)/var(--lh-small) var(--font-sans);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+}
+
+/* ============================================================
+   Card
+   ============================================================ */
+.card {
+  background: var(--color-white);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-card);
+  padding: var(--space-8);
+  transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card:hover { box-shadow: var(--shadow-s2); }
+.card-featured { box-shadow: var(--shadow-s2); }
+.card-large { padding: var(--space-10); border-radius: var(--radius-featured); }
+.card-hero { padding: var(--space-10); border-radius: var(--radius-hero); }
+
+.card.on-dark {
+  background: var(--color-card-dark);
+  border-color: var(--border-dark);
+  color: var(--color-white);
+}
+
+/* ============================================================
+   Inputs
+   ============================================================ */
+.input {
+  background: var(--color-white);
+  border: 1px solid var(--color-smoke);
+  border-radius: var(--radius-input);
+  padding: 12px 16px;
+  font: var(--fw-text) var(--fs-body)/var(--lh-body) var(--font-sans);
+  color: var(--color-charcoal);
+  outline: none;
+  width: 100%;
+  letter-spacing: 0;
+}
+.input::placeholder { color: var(--color-pewter); }
+.input:focus {
+  border-color: var(--color-bluetiful);
+  box-shadow: var(--shadow-focus);
+}
+.input.error {
+  border-color: var(--color-error);
+}
+
+/* ============================================================
+   Section rhythm helpers
+   ============================================================ */
+.section { padding: var(--space-24) 0; }
+.section.tight { padding: var(--space-20) 0; }
+.section.dark {
+  background: var(--bg-spotlight);
+  color: var(--color-white);
+}
+.section.dark .h1, .section.dark .h2, .section.dark h1, .section.dark h2 {
+  color: var(--color-white);
+}
+.section.dark .body, .section.dark .text { color: var(--color-silver-dark); }
+.section.step-in { background: var(--bg-step-in); }
+.section.alt    { background: var(--bg-alt); }
+
+/* ============================================================
+   Floating bubble (hero decorative)
+   ============================================================ */
+.bubble {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-pill);
+  background: var(--color-white);
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-s2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

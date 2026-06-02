@@ -1,0 +1,151 @@
+/* ============================================================================
+   Gofive Design System — Colors & Type
+   ============================================================================ */
+
+@font-face {
+  font-family: "Gofive";
+  src: url("/fonts/Gofive-Text.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gofive";
+  src: url("/fonts/Gofive-Medium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gofive";
+  src: url("/fonts/Gofive-SemiBold.woff") format("woff");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gofive";
+  src: url("/fonts/Gofive-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --gf-charcoal-12: #1C1C22;
+  --gf-iron-11:     #383842;
+  --gf-lead-10:     #525260;
+  --gf-anchor-9:    #6A6A7C;
+  --gf-porpoise-8:  #838395;
+  --gf-pewter-7:    #A5A5B6;
+  --gf-flint-6:     #BCBCC8;
+  --gf-silver-5:    #D2D2DA;
+  --gf-smoke-4:     #DFDFE8;
+  --gf-cloud-3:     #ECECF1;
+  --gf-soft-cloud-2:#F6F6F8;
+  --gf-white-1:     #FFFFFF;
+
+  --gf-validation:    #DE3A45;
+  --gf-system-error:  #3F536B;
+  --gf-notification:  #F02848;
+  --gf-success:       #00C291;
+  --gf-success-light: #00CC99;
+  --gf-success-soft:  #CCF3E9;
+  --gf-success-dark:  #00A67C;
+  --gf-warning:       #FD911B;
+  --gf-info:          #4C97FF;
+
+  --brand-gofive-orange: #F87014;
+
+  --brand-venio:           #116DFC;
+  --brand-empeo:           #F05B2F;
+  --brand-empeo-puff:      #FFE1CC;
+  --brand-empeo-seashell:  #FFF3EC;
+  --brand-etaxgo:          #EB1C26;
+  --brand-etaxgo-misty:    #FFEAE5;
+  --brand-salesbear:       #FFC505;
+  --brand-salesbear-corn:  #FFF8E0;
+
+  --color-primary:           var(--brand-empeo);
+  --color-primary-hover:     #DA4815;
+  --color-primary-pressed:   #C03D0E;
+  --color-primary-soft:      var(--brand-empeo-puff);
+  --color-primary-on:        #FFFFFF;
+
+  --fg-1: var(--gf-charcoal-12);
+  --fg-2: var(--gf-iron-11);
+  --fg-3: var(--gf-anchor-9);
+  --fg-4: var(--gf-porpoise-8);
+  --fg-disabled: var(--gf-flint-6);
+  --fg-on-brand: #FFFFFF;
+
+  --bg-app:     var(--gf-soft-cloud-2);
+  --bg-surface: var(--gf-white-1);
+  --bg-raised:  var(--gf-white-1);
+  --bg-hover:   var(--gf-soft-cloud-2);
+  --bg-pressed: var(--gf-cloud-3);
+
+  --border-subtle:  var(--gf-silver-5);
+  --border-default: var(--gf-smoke-4);
+  --border-strong:  var(--gf-flint-6);
+  --border-focus:   var(--brand-empeo);
+
+  --font-sans:  "Gofive", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+                "Helvetica Neue", "Sukhumvit Set", "Kanit", system-ui, sans-serif;
+  --font-display: var(--font-sans);
+  --font-mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --fw-text:   400;
+  --fw-medium: 500;
+  --fw-strong: 600;
+  --fw-bold:   700;
+
+  --t-h1:        2rem;
+  --t-h1-lh:    44px;
+  --t-h2:        1.625rem;
+  --t-h2-lh:    36px;
+  --t-h3:        1.5rem;
+  --t-h3-lh:    32px;
+  --t-h4:        1.25rem;
+  --t-h4-lh:    28px;
+  --t-h5:        1.125rem;
+  --t-h5-lh:    26px;
+  --t-title:     1rem;
+  --t-title-lh: 24px;
+  --t-body:      0.875rem;
+  --t-body-lh:  20px;
+  --t-small:     0.75rem;
+  --t-small-lh: 18px;
+  --t-xsmall:    0.625rem;
+  --t-xsmall-lh:14px;
+
+  --s-1:  4px;  --s-2:  8px;  --s-3: 12px;  --s-4: 16px;
+  --s-5: 20px;  --s-6: 24px;  --s-7: 32px;  --s-8: 44px;
+  --s-9: 60px;  --s-10: 88px;
+
+  --r-xs: 4px; --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px; --r-pill: 999px;
+
+  --shadow-1: 1px 3px 6px 0 rgba(0,0,0,0.12);
+  --shadow-2: 0 0 12px 0 rgba(0,0,0,0.10);
+  --shadow-3: 0 8px 24px 0 rgba(28,28,34,0.12);
+  --shadow-4: 0 16px 48px 0 rgba(28,28,34,0.18);
+
+  --focus-ring: 0 0 0 3px rgba(240,91,47,0.24);
+
+  --btn-h-lg: 44px;
+  --btn-h-md: 40px;
+  --btn-h-sm: 36px;
+  --btn-h-xs: 32px;
+
+  --ease-out:   cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast:   120ms;
+  --dur-base:   200ms;
+  --dur-slow:   320ms;
+}
+
+.gofive h1, .gf-h1 { font-family: var(--font-sans); font-weight: var(--fw-strong); font-size: var(--t-h1); line-height: var(--t-h1-lh); color: var(--fg-1); letter-spacing: -0.01em; margin: 0; }
+.gofive h2, .gf-h2 { font-weight: var(--fw-strong); font-size: var(--t-h2); line-height: var(--t-h2-lh); color: var(--fg-1); margin: 0; }
+.gofive h3, .gf-h3 { font-weight: var(--fw-strong); font-size: var(--t-h3); line-height: var(--t-h3-lh); color: var(--fg-1); margin: 0; }
+.gofive h4, .gf-h4 { font-weight: var(--fw-strong); font-size: var(--t-h4); line-height: var(--t-h4-lh); color: var(--fg-1); margin: 0; }
+.gofive h5, .gf-h5 { font-weight: var(--fw-strong); font-size: var(--t-h5); line-height: var(--t-h5-lh); color: var(--fg-1); margin: 0; }

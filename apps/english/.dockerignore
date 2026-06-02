@@ -1,0 +1,36 @@
+# Dependencies (reinstalled inside the image)
+node_modules
+server/node_modules
+
+# Build output (rebuilt in the frontend stage)
+dist
+server/dist
+
+# Secrets & local env — never bake into an image
+.env
+.env.*
+server/.env
+server/.env.*
+!.env.example
+!server/.env.example
+
+# Design handoff bundle (gitignored, read-only reference)
+english-test-remix
+
+# VCS / editor / OS noise
+.git
+.gitignore
+.vscode
+.idea
+*.log
+npm-debug.log*
+
+# Tests & CI artifacts not needed at runtime
+**/*.test.js
+**/*.test.jsx
+playwright-report
+test-results
+
+# Docker meta
+Dockerfile
+.dockerignore

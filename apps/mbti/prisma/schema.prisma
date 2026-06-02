@@ -1,0 +1,87 @@
+// Prisma schema for the MBTI assessment service.
+//
+// Provider is `sqlserver` (Azure SQL / SQL Server). To run against a different
+// engine, swap `provider` below and re-run `prisma migrate`.
+//
+// Note: SQL Server has no native JSON type, so the *_json columns are stored as
+// NVARCHAR(MAX) strings. The service layer (server/assessmentService.js) is
+// responsible for JSON.stringify on write and JSON.parse on read.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+  // Phase 2 of the unified-DB plan (english-test/docs/unified-db-plan.md):
+  // table ownership is split by SQL Server schema. This service OWNS `mbti`
+  // and only *declares* `shared` — shared.subjects DDL belongs to the
+  // english-test migration ledger. NEVER `prisma db push`/`migrate dev` from
+  // this repo against the shared database; apply schema changes with
+  // `prisma migrate diff` + `prisma db execute` (see prisma/phase2-transfer.sql
+  // for the pattern).
+  schemas  = ["mbti", "shared"]
+}
+
+model AssessmentSubject {
+  id                  String   @id @default(uuid()) @db.UniqueIdentifier
+  sourceSystem        String   @map("source_system") @db.VarChar(80)
+  externalUserId      String   @map("external_user_id") @db.VarChar(255)
+  emailSnapshot       String?  @map("email_snapshot") @db.NVarChar(255)
+  displayNameSnapshot String?  @map("display_name_snapshot") @db.NVarChar(255)
+  createdAt           DateTime @default(now()) @map("created_at") @db.DateTimeOffset
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.DateTimeOffset
+
+  attempts AssessmentAttempt[]
+
+  @@unique([sourceSystem, externalUserId])
+  // Cross-service identity table shared with english-test. Column shapes must
+  // stay in lockstep with english-test/server/prisma/schema.prisma (Subject).
+  @@map("subjects")
+  @@schema("shared")
+}
+
+// One row per assessment run: lifecycle columns + result columns on the same
+// table (the old assessment_results table was 1:1 with attempts, so it was
+// folded in — same shape english.attempts uses). Result columns stay NULL
+// until status flips to 'completed'; the completion UPDATE is conditional on
+// status='started', which replaces the old unique-constraint double-complete
+// guard.
+model AssessmentAttempt {
+  id               String    @id @db.UniqueIdentifier
+  subjectId        String    @map("subject_id") @db.UniqueIdentifier
+  attemptTokenHash String    @unique @map("attempt_token_hash") @db.Char(64)
+  status           String    @db.VarChar(20)
+  startedAt        DateTime  @default(now()) @map("started_at") @db.DateTimeOffset
+  completedAt      DateTime? @map("completed_at") @db.DateTimeOffset
+  expiresAt        DateTime  @map("expires_at") @db.DateTimeOffset
+  createdAt        DateTime  @default(now()) @map("created_at") @db.DateTimeOffset
+
+  // Result delivery to the parent site (mirrors english.attempts). callbackUrl
+  // is supplied by the parent at attempt creation; deliverResult() pushes the
+  // scored result there on completion and stamps resultDeliveredAt on success.
+  // The filtered "undelivered" index lives in raw SQL (prisma/add-webhook-delivery.sql)
+  // — Prisma can't express filtered indexes and ignores them on introspection.
+  callbackUrl       String?   @map("callback_url") @db.NVarChar(Max)
+  resultDeliveredAt DateTime? @map("result_delivered_at") @db.DateTimeOffset
+  deliveryAttempts  Int       @default(0) @map("delivery_attempts")
+
+  // Result columns — populated by the completion UPDATE.
+  mbtiCode       String?  @map("mbti_code") @db.VarChar(4)
+  softCode       String?  @map("soft_code") @db.VarChar(40)
+  axesJson       String?  @map("axes_json") @db.NVarChar(Max)
+  barsJson       String?  @map("bars_json") @db.NVarChar(Max)
+  confidenceJson String?  @map("confidence_json") @db.NVarChar(Max)
+  midzonesJson   String?  @map("midzones_json") @db.NVarChar(Max)
+  facetsJson     String?  @map("facets_json") @db.NVarChar(Max)
+  responsesJson  String?  @map("responses_json") @db.NVarChar(Max)
+  engineVersion  String?  @map("engine_version") @db.VarChar(50)
+
+  subject AssessmentSubject @relation(fields: [subjectId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  @@index([subjectId, createdAt(sort: Desc)])
+  @@index([subjectId, completedAt(sort: Desc)])
+  @@map("attempts")
+  @@schema("mbti")
+}

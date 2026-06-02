@@ -1,0 +1,17 @@
+{
+  "name": "gofive-exams",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Single-container host for the english-test and mbti assessment engines (path-routed: /english + /mbti).",
+  "scripts": {
+    "install:all": "npm install && cd apps/english && npm install && cd server && npm install && cd ../../mbti && npm install",
+    "build": "npm --prefix apps/english run build -- --base=/english/ && npm --prefix apps/mbti run build -- --base=/mbti/",
+    "start": "node --env-file-if-exists=.env gateway/index.js",
+    "dev": "node --env-file-if-exists=.env --watch gateway/index.js",
+    "test": "npm --prefix apps/english test"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

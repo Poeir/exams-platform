@@ -1,0 +1,579 @@
+openapi: 3.0.3
+info:
+  title: MBTI Workplace Simulator API
+  version: 1.0.0
+  description: |
+    Backend API for the MBTI Workplace Simulator. The parent website creates
+    an assessment attempt server-to-server, the user completes the quiz in
+    the test app, and results are persisted in Azure SQL (via Prisma).
+
+    Authentication is split between two audiences:
+    - **Parent website (server-to-server)** sends the shared `X-API-Key`
+      header (unified name across both assessment engines; the legacy
+      `x-service-key` header is still accepted as an alias) to create
+      attempts and read subject history.
+    - **Test app (browser)** receives an opaque attempt token via the launch
+      URL and submits it as a `Bearer` token to complete the attempt and
+      read its own result.
+
+servers:
+  - url: http://localhost:3001
+    description: Local development
+  - url: /
+    description: Same-origin (Vite proxies `/api` to the API)
+
+tags:
+  - name: Health
+    description: Service liveness checks
+  - name: Attempts
+    description: Assessment attempt lifecycle
+  - name: Results
+    description: Computed assessment results
+
+security: []
+
+paths:
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Service health check
+      description: Returns `ok` once the database connection succeeds.
+      responses:
+        '200':
+          description: Service and database are reachable.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/v1/assessment-attempts:
+    post:
+      tags: [Attempts]
+      summary: Create an assessment attempt
+      description: |
+        Called server-to-server by the parent backend after it has authenticated
+        a user. Returns an opaque `attemptToken` and a `testUrl` that the
+        parent forwards to the user's browser to launch the test.
+      security:
+        - ParentServiceKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAttemptRequest'
+            examples:
+              default:
+                value:
+                  sourceSystem: main_web
+                  externalUserId: usr_123
+                  email: alice@example.com
+                  displayName: Alice
+      responses:
+        '201':
+          description: Attempt created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssessmentAttempt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedService'
+
+  /api/v1/assessment-attempts/{attemptId}/complete:
+    post:
+      tags: [Attempts]
+      summary: Complete an assessment attempt
+      description: |
+        Called from the test app once the user finishes the quiz. The browser
+        sends the opaque attempt token issued during attempt creation as a
+        bearer token. The backend re-scores `responses` server-side and ignores
+        any client-computed result.
+      security:
+        - AttemptToken: []
+      parameters:
+        - $ref: '#/components/parameters/AttemptId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteAttemptRequest'
+      responses:
+        '201':
+          description: Attempt scored and stored.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssessmentResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Attempt token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Attempt is already completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '410':
+          description: Attempt token has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/subjects/{sourceSystem}/{externalUserId}/view-link:
+    post:
+      tags: [Results]
+      summary: Mint a view link for the subject's latest completed result
+      description: |
+        Attempt-id-free variant of the attempt view-link endpoint: resolves
+        the subject's most recent completed attempt and mints a short-lived
+        signed view URL for it. Parents only need their own user id.
+      security:
+        - ParentServiceKey: []
+      parameters:
+        - name: sourceSystem
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: externalUserId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: View link minted for the latest completed attempt.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attemptId:
+                    type: string
+                    format: uuid
+                  completedAt:
+                    type: string
+                    format: date-time
+                  viewUrl:
+                    type: string
+                    format: uri
+                  expiresAt:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedService'
+        '404':
+          description: No completed attempt for this subject.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/assessment-attempts/{attemptId}/redeliver:
+    post:
+      tags: [Results]
+      summary: Retry the result webhook for a completed attempt
+      description: |
+        Re-POSTs the scored result to the attempt's `callbackUrl`. Useful when
+        the parent missed the original push. No-ops (delivered=false) when the
+        attempt has no callbackUrl, is not completed, or the retry budget is
+        exhausted; returns delivered=true immediately when already delivered.
+      security:
+        - ParentServiceKey: []
+      parameters:
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Delivery attempt finished.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  delivered:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedService'
+
+  /api/v1/assessment-attempts/{attemptId}/view-link:
+    post:
+      tags: [Results]
+      summary: Mint a short-lived result view link for the parent site
+      description: |
+        Exchanges the parent service key for a signed, short-lived URL
+        (default 15 minutes, `VIEW_LINK_TTL_MINUTES`) that opens the result
+        screen read-only in a browser — the "open result in a new tab" flow.
+        The token is stateless (HMAC over attempt id + expiry); nothing is
+        stored. Only completed attempts can be viewed.
+      security:
+        - ParentServiceKey: []
+      parameters:
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: View link minted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attemptId:
+                    type: string
+                    format: uuid
+                  viewUrl:
+                    type: string
+                    format: uri
+                  expiresAt:
+                    type: string
+                    format: date-time
+        '401':
+          description: Parent service key is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No completed attempt with this id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/assessment-results/view:
+    get:
+      tags: [Results]
+      summary: Fetch a result with a signed view token (read-only)
+      description: |
+        Browser-facing endpoint behind the view link. Returns the result
+        record without the raw question responses and without requiring the
+        candidate's attempt token.
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Result found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssessmentResult'
+        '401':
+          description: View token is invalid or has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Result not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/assessment-results/{resultId}:
+    get:
+      tags: [Results]
+      summary: Fetch a completed result
+      description: |
+        Returns the full scored result for a single attempt. The caller must
+        present the same attempt token used to complete the attempt.
+      security:
+        - AttemptToken: []
+      parameters:
+        - name: resultId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Result found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssessmentResult'
+        '401':
+          description: Attempt token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Result not found for this token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/subjects/{sourceSystem}/{externalUserId}/results:
+    get:
+      tags: [Results]
+      summary: List results for a parent-identified subject
+      description: |
+        Returns every completed result for a given external user, most recent
+        first. Called server-to-server by the parent backend.
+      security:
+        - ParentServiceKey: []
+      parameters:
+        - name: sourceSystem
+          in: path
+          required: true
+          schema:
+            type: string
+          example: main_web
+        - name: externalUserId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: usr_123
+      responses:
+        '200':
+          description: Result list (possibly empty).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AssessmentResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedService'
+
+components:
+  securitySchemes:
+    ParentServiceKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        Shared secret used by the parent backend server-to-server
+        (env PARENT_API_KEY — same header name as the english-test engine).
+        The legacy `x-service-key` header is still accepted as an alias.
+    AttemptToken:
+      type: http
+      scheme: bearer
+      description: |
+        Opaque attempt token issued by `POST /api/v1/assessment-attempts`.
+        Sent by the test app browser as `Authorization: Bearer <token>`.
+
+  parameters:
+    AttemptId:
+      name: attemptId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Request payload is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnauthorizedService:
+      description: Parent service key is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: A versioned responses payload is required.
+
+    CreateAttemptRequest:
+      type: object
+      required: [sourceSystem, externalUserId]
+      properties:
+        sourceSystem:
+          type: string
+          description: Identifier for the parent system that owns the user.
+          example: main_web
+        externalUserId:
+          type: string
+          description: Stable user id within the parent system.
+          example: usr_123
+        email:
+          type: string
+          format: email
+          nullable: true
+        displayName:
+          type: string
+          nullable: true
+        callbackUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: |
+            Optional webhook target. When set, the scored result is POSTed
+            here on completion with an `X-Signature` header
+            (`sha256=` + HMAC-SHA256 of the raw body using the parent key) —
+            the same contract as the english-test engine. Retries are capped
+            (WEBHOOK_MAX_ATTEMPTS, default 5) and can be re-triggered via
+            the redeliver endpoint.
+
+    AssessmentAttempt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Attempt id (also referenced in `testUrl`).
+        attemptToken:
+          type: string
+          description: Opaque token returned only once. Forward to the user.
+        userId:
+          type: string
+          description: Echo of `externalUserId`.
+        subjectId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [started, completed]
+        expiresAt:
+          type: string
+          format: date-time
+        testUrl:
+          type: string
+          format: uri
+          description: Launch URL with `attempt_id` and `attempt_token` query params.
+
+    CompleteAttemptRequest:
+      type: object
+      required: [version, responses]
+      properties:
+        version:
+          type: string
+          enum: ['1.0']
+          description: Responses payload schema version.
+        responses:
+          type: object
+          additionalProperties:
+            oneOf:
+              - type: string
+                description: MCQ / chat answer — the selected `optionId`.
+              - type: object
+                description: Slider answer.
+                properties:
+                  distribution:
+                    type: object
+                    additionalProperties:
+                      type: number
+                    description: Action id → percentage (must sum to 100).
+          example:
+            q1: q1-a
+            q12:
+              distribution:
+                q12-a: 25
+                q12-b: 25
+                q12-c: 25
+                q12-d: 25
+
+    AssessmentResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        attemptId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+              nullable: true
+            name:
+              type: string
+              nullable: true
+        source:
+          type: string
+          example: service-api
+        completedAt:
+          type: string
+          format: date-time
+        result:
+          $ref: '#/components/schemas/ScoredResult'
+        responses:
+          type: object
+          description: Raw responses payload submitted on completion.
+
+    ScoredResult:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Final MBTI code, e.g. `INTJ`.
+          example: INTJ
+        softCode:
+          type: string
+          nullable: true
+          description: Alternate code when axes sit in the midzone.
+        axes:
+          type: object
+          description: Signed sums per axis (E/I, S/N, T/F, J/P).
+          additionalProperties:
+            type: number
+        bars:
+          type: object
+          description: 0–100 trait bar percentages.
+          additionalProperties:
+            type: number
+        confidence:
+          type: object
+          description: Per-axis confidence level.
+          additionalProperties:
+            type: string
+            enum: [midzone, slight, clear, veryClear]
+        midzones:
+          type: array
+          description: Axes whose score sits below the confidence threshold.
+          items:
+            type: string
+        facets:
+          type: object
+          description: Secondary facet accumulators (13 labels).
+          additionalProperties:
+            type: number

@@ -1,0 +1,162 @@
+// Prisma schema for the english-test backend.
+//
+// Provider is `sqlserver` (Azure SQL / SQL Server) so this service can share a
+// single database with the mbti-personality service. See docs/unified-db-plan.md.
+//
+// SQL Server specifics that differ from the old PostgreSQL schema:
+//  - No native JSON type: the former `Json` columns (tags/options/extras/answers/
+//    result) are stored as NVARCHAR(MAX) strings. The query layer serialises them
+//    via server/src/json.js (toDbJson on write, fromDbJson on read) — same pattern
+//    the mbti service uses for its *_json columns.
+//  - Timestamptz → DateTimeOffset.
+//  - String PK / FK / unique / indexed columns MUST be length-bounded
+//    (@db.VarChar(n)); SQL Server caps an index key at 900 bytes, and the default
+//    NVarChar(1000) overshoots it. Free-text columns use NVarChar(Max).
+//
+// NOTE: field names stay snake_case to match column names 1:1 so src/shape.js
+// keeps working. CHECK constraints and the filtered "undelivered" index live in
+// the migration SQL (Prisma's schema language can't express them) — keep in sync.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+  // Phase 2: ownership is split by SQL Server schema namespace. This project
+  // owns the migration ledger for `english` AND `shared`; the mbti service
+  // manages its own `mbti` schema via diff-scripts and only *declares*
+  // shared.subjects. Prisma only touches the schemas listed here, so a
+  // `db push` from either repo can no longer drop the other's tables.
+  schemas  = ["english", "shared"]
+}
+
+// Cross-service identity: one row per person, shared with the mbti service
+// (its assessment_subjects rows were folded into this table in Phase 2).
+// Column shapes MUST stay in lockstep with mbti-personality/prisma/schema.prisma.
+model Subject {
+  id                    String   @id @default(uuid()) @db.UniqueIdentifier
+  source_system         String   @db.VarChar(80)
+  external_user_id      String   @db.VarChar(255)
+  email_snapshot        String?  @db.NVarChar(255)
+  display_name_snapshot String?  @db.NVarChar(255)
+  created_at            DateTime @default(now()) @db.DateTimeOffset
+  updated_at            DateTime @updatedAt @db.DateTimeOffset
+
+  attempts Attempt[]
+
+  @@unique([source_system, external_user_id])
+  @@map("subjects")
+  @@schema("shared")
+}
+
+model Paper {
+  id             String    @id @db.VarChar(255)
+  name           String    @db.NVarChar(500)
+  description    String?   @db.NVarChar(Max)
+  status         String?   @db.VarChar(40)
+  total_score    Int?
+  time_limit_min Int?
+  created_at     DateTime  @default(now()) @db.DateTimeOffset
+  completed_at   DateTime? @db.DateTimeOffset
+
+  sections Section[]
+  attempts Attempt[]
+
+  @@map("papers")
+  @@schema("english")
+}
+
+model Section {
+  id               String  @id @db.VarChar(255)
+  paper_id         String  @db.VarChar(255)
+  name             String  @db.NVarChar(500)
+  part_number      Int?
+  skill            String? @db.VarChar(80)
+  cefr             String? @db.VarChar(20)
+  topic            String? @db.NVarChar(500)
+  passage_length   Int?
+  item_count       Int?
+  section_score    Int?
+  section_time_min Int?
+  passage_id       String? @db.VarChar(255)
+  passage_content  String? @db.NVarChar(Max)
+  order_index      Int     @default(0)
+
+  paper Paper  @relation(fields: [paper_id], references: [id], onDelete: Cascade)
+  items Item[]
+
+  @@index([paper_id, part_number, order_index])
+  @@map("sections")
+  @@schema("english")
+}
+
+model Item {
+  id              String  @id @db.VarChar(255)
+  section_id      String  @db.VarChar(255)
+  stem            String  @db.NVarChar(Max)
+  question_type   String? @db.VarChar(80)
+  cefr_level      String? @db.VarChar(20)
+  difficulty_band String? @db.VarChar(40)
+  score_weight    Float?
+  correct_answer  String  @db.NVarChar(Max)
+  explanation     String? @db.NVarChar(Max)
+  judge_score     Float?
+  objective       String? @db.NVarChar(Max)
+  // Stored as NVARCHAR(MAX) JSON strings (SQL Server has no JSON type).
+  tags            String  @default("[]") @db.NVarChar(Max)
+  order_index     Int     @default(0)
+  options         String  @db.NVarChar(Max)
+  extras          String  @default("{}") @db.NVarChar(Max)
+
+  section Section @relation(fields: [section_id], references: [id], onDelete: Cascade)
+
+  @@index([section_id, order_index])
+  @@map("items")
+  @@schema("english")
+}
+
+model Attempt {
+  id                      String    @id @db.VarChar(255)
+  paper_id                String    @db.VarChar(255)
+  // Cross-service identity (shared.subjects). Nullable: anonymous attempts
+  // have no subject. (Replaced the old free-text user_ref column.)
+  subject_id              String?   @db.UniqueIdentifier
+  // Lifecycle: pending → in_progress → submitted (or expired). The CHECK
+  // constraint enforcing these values lives in the migration SQL.
+  status                  String    @default("pending") @db.VarChar(20)
+  // Unique via a FILTERED unique index (WHERE launch_token IS NOT NULL) in
+  // the migration SQL — a plain @unique would allow only ONE NULL row on SQL
+  // Server, and every consumed/anonymous attempt has launch_token = NULL.
+  // Queries use findFirst({ launch_token }).
+  launch_token            String?   @db.VarChar(64)
+  launch_token_expires_at DateTime? @db.DateTimeOffset
+  callback_url            String?   @db.NVarChar(Max)
+  // JSON stored as NVARCHAR(MAX) strings (see server/src/json.js).
+  answers                 String    @default("{}") @db.NVarChar(Max)
+  result                  String?   @db.NVarChar(Max)
+  correct_total           Int?
+  max_total               Int?
+  cefr_level              Int?
+  cefr_label              String?   @db.VarChar(40)
+  time_limit_min          Int?
+  expires_at              DateTime? @db.DateTimeOffset
+  result_delivered_at     DateTime? @db.DateTimeOffset
+  delivery_attempts       Int       @default(0)
+  created_at              DateTime  @default(now()) @db.DateTimeOffset
+  started_at              DateTime? @db.DateTimeOffset
+  submitted_at            DateTime? @db.DateTimeOffset
+  updated_at              DateTime  @updatedAt @db.DateTimeOffset
+
+  paper   Paper    @relation(fields: [paper_id], references: [id], onDelete: Cascade)
+  // NoAction: deleting a subject must not ripple into attempt history (and it
+  // sidesteps SQL Server's multiple-cascade-path restriction).
+  subject Subject? @relation(fields: [subject_id], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  @@index([paper_id])
+  @@index([subject_id])
+  @@index([status])
+  @@map("attempts")
+  @@schema("english")
+}

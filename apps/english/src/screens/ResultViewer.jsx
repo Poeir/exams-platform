@@ -1,0 +1,74 @@
+import React, { useEffect, useState } from 'react';
+import { ETTopbar } from '../components/Common.jsx';
+import { ResultCertificate } from './Results.jsx';
+import { withBase } from '../lib/base.js';
+
+// Read-only result page for the parent site ("open result in a new tab").
+// Reached at /result?vt=<signed view token>; the token is minted for the
+// parent backend by POST /api/attempts/:id/view-link and expires quickly.
+//
+// Renders the SAME certificate layout as the candidate's Results screen
+// (ResultCertificate, shared from Results.jsx) — but fed from the server's
+// display summary instead of local exam state, so it carries no answer key
+// and works in a fresh browser with no ExamContext.
+
+export default function ResultViewer() {
+  const [state, setState] = useState({ loading: true, error: null, data: null });
+
+  useEffect(() => {
+    const vt = new URLSearchParams(window.location.search).get('vt');
+    if (!vt) {
+      setState({ loading: false, error: 'missing view token', data: null });
+      return;
+    }
+    (async () => {
+      try {
+        const res = await fetch(withBase(`/api/attempts/view?vt=${encodeURIComponent(vt)}`));
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || `request failed (${res.status})`);
+        setState({ loading: false, error: null, data: payload });
+      } catch (e) {
+        setState({ loading: false, error: e.message, data: null });
+      }
+    })();
+  }, []);
+
+  return (
+    <div className="et et-screen et-screen--white">
+      <ETTopbar crumbs={[{ text: 'Result', strong: true }]} />
+
+      <div className="et-results et-results--dim">
+        <div className="et-results__inner">
+          {state.loading && (
+            <p style={{ color: 'var(--fg-3)', fontWeight: 600, textAlign: 'center' }}>
+              Loading result…
+            </p>
+          )}
+
+          {state.error && (
+            <div style={{ textAlign: 'center' }}>
+              <h2 className="gf-h4" style={{ marginBottom: 8 }}>Couldn’t open this result</h2>
+              <p style={{ color: 'var(--fg-2)', fontWeight: 500, margin: 0 }}>
+                {/expired|invalid|token/i.test(state.error)
+                  ? 'This view link is invalid or has expired — please open it again from the source system.'
+                  : state.error}
+              </p>
+            </div>
+          )}
+
+          {state.data && state.data.result?.skills && (
+            <ResultCertificate
+              user={{
+                name: state.data.display_name || state.data.external_user_id || 'Anonymous candidate',
+                position: state.data.paper_name || 'English Proficiency Test',
+                avatarUrl: null,
+              }}
+              skills={state.data.result?.skills}
+              issuedAt={state.data.submitted_at}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

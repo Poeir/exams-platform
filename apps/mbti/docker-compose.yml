@@ -1,0 +1,16 @@
+services:
+  sqlserver:
+    # Azure SQL Edge is the closest local stand-in for Azure SQL and runs on
+    # both x86 and ARM. Swap for mcr.microsoft.com/mssql/server:2022-latest if
+    # you need full SQL Server feature parity on x86.
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    environment:
+      ACCEPT_EULA: '1'
+      MSSQL_SA_PASSWORD: 'Your_password123'
+    ports:
+      - '1433:1433'
+    volumes:
+      - mbti_sqlserver_data:/var/opt/mssql
+
+volumes:
+  mbti_sqlserver_data:

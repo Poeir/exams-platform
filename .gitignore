@@ -1,0 +1,29 @@
+# Dependencies / build output (every level)
+node_modules
+dist
+.vite
+
+# Secrets — real DB credentials and keys live here
+.env
+.env.*
+!.env.example
+
+# Exam content with answer keys (seed source, distributed out-of-band)
+papers_export_1_full.json
+papers_export_1_full_old.json
+
+# Design handoff bundles (read-only references, not source)
+english-test-remix/
+handoff/
+MBTI-handoff.tar.gz
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.log
+coverage
+playwright-report
+test-results

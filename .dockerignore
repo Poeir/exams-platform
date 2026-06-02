@@ -1,0 +1,36 @@
+# Dependencies (reinstalled inside the image) & build output (rebuilt)
+node_modules
+**/node_modules
+dist
+**/dist
+**/.vite
+
+# Secrets & local env — never bake into an image
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+
+# Exam content (seeded out-of-band, not shipped in the image)
+papers_export_1_full.json
+papers_export_1_full_old.json
+
+# Reference bundles / VCS / editor noise
+english-test-remix
+handoff
+.git
+.gitignore
+.vscode
+.idea
+*.log
+
+# Tests & CI artifacts not needed at runtime
+**/*.test.js
+**/*.test.jsx
+playwright-report
+test-results
+
+# Docker meta
+Dockerfile
+.dockerignore
