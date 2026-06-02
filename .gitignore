@@ -11,6 +11,7 @@ dist
 # Exam content with answer keys (seed source, distributed out-of-band)
 papers_export_1_full.json
 papers_export_1_full_old.json
+Quick_Placement_Test_*.json
 
 # Design handoff bundles (read-only references, not source)
 english-test-remix/
