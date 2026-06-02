@@ -350,9 +350,22 @@ function ExamplePanel({ data }) {
   );
 }
 
+// The short placement paper is one self-contained Grammar + Reading test, so
+// its instructions drop the full test's "Section 2 of 2" framing.
+const SHORT_READING_OVERRIDES = {
+  crumbs: [{ text: 'Placement Test' }, { text: 'Instructions', strong: true }],
+  eyebrow: 'Quick Placement Test',
+  title: 'Grammar & Reading',
+  description:
+    'You will answer grammar questions and read short workplace texts, then answer questions about them. The test is self-paced — manage your time so you can attempt every question before time runs out.',
+};
+
 function Instructions({ variant = 'listening', onFlowNext, onFlowPrev, onExit }) {
-  const data = VARIANTS[variant] || VARIANTS.listening;
+  const base = VARIANTS[variant] || VARIANTS.listening;
   const { mode, version } = useExam();
+  const data = variant === 'reading' && version === 'short'
+    ? { ...base, ...SHORT_READING_OVERRIDES }
+    : base;
   const autoplayDirections = variant === 'listening' && mode === 'strict';
   const allowPrevious = variant !== 'reading' && !autoplayDirections;
 

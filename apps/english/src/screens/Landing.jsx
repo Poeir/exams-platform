@@ -13,6 +13,14 @@ const PART_BLURBS = {
   7: 'Read single and paired passages and answer questions about them.',
 };
 
+// Native-structure papers (the short placement test) blurb by section skill
+// instead of by TOEIC part number.
+const SKILL_BLURBS = {
+  grammar: 'Choose the answer that uses correct grammar and structure.',
+  vocabulary: 'Choose the word or phrase that best completes the sentence.',
+  reading: 'Read a short workplace text and answer questions about it.',
+};
+
 function Stat({ label, value }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -27,7 +35,7 @@ function Stat({ label, value }) {
   );
 }
 
-function PartRow({ index, title, blurb, qs }) {
+function PartRow({ index, heading, blurb, qs }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'flex-start', gap: 14,
@@ -43,7 +51,7 @@ function PartRow({ index, title, blurb, qs }) {
       }}>{index}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg-1)', marginBottom: 4 }}>
-          Part {index} · {title}
+          {heading}
         </div>
         <div style={{ fontSize: 12.5, color: 'var(--fg-3)', fontWeight: 500, lineHeight: 1.45 }}>
           {blurb}
@@ -56,7 +64,7 @@ function PartRow({ index, title, blurb, qs }) {
   );
 }
 
-function SectionCard({ accent, icon, label, summary, parts }) {
+function SectionCard({ accent, icon, label, summary, parts, isShort = false }) {
   const isPrimary = accent === 'primary';
   return (
     <div style={{
@@ -82,12 +90,12 @@ function SectionCard({ accent, icon, label, summary, parts }) {
           {summary}
         </span>
       </div>
-      {parts.map((p, i) => (
+      {parts.map((p) => (
         <PartRow
           key={p.number}
           index={p.number}
-          title={p.title}
-          blurb={PART_BLURBS[p.number] || ''}
+          heading={isShort ? p.title : `Part ${p.number} · ${p.title}`}
+          blurb={isShort ? (SKILL_BLURBS[p.skill] || '') : (PART_BLURBS[p.number] || '')}
           qs={p.totalItems}
         />
       ))}
@@ -101,6 +109,17 @@ export default function Landing({ onExit }) {
 
   const listeningParts = exam ? partsBySection(exam, 'listening') : [];
   const readingParts   = exam ? partsBySection(exam, 'reading')   : [];
+
+  // Short paper overview: collapse the per-band parts into one row per skill
+  // (Grammar / Reading) — the CEFR ramp stays invisible to the candidate.
+  const shortRows = [];
+  if (isShort) {
+    for (const p of readingParts) {
+      const row = shortRows.find((r) => r.skill === p.skill);
+      if (row) row.totalItems += p.totalItems;
+      else shortRows.push({ number: shortRows.length + 1, title: p.title, skill: p.skill, totalItems: p.totalItems });
+    }
+  }
 
   const listeningQs  = listeningParts.reduce((n, p) => n + p.totalItems, 0);
   const readingQs    = readingParts.reduce((n, p) => n + p.totalItems, 0);
@@ -125,11 +144,14 @@ export default function Landing({ onExit }) {
         <div className="et-landing-split__leftInner">
           <div>
             <h1 className="et-display" style={{ fontSize: 64, letterSpacing: '-0.025em', lineHeight: 1.02, margin: 0, marginBottom: 18 }}>
-              English<br />Proficiency<br />Test.
+              {isShort
+                ? <>Quick<br />Placement<br />Test.</>
+                : <>English<br />Proficiency<br />Test.</>}
             </h1>
             <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--fg-2)', fontWeight: 500, margin: 0, maxWidth: 440 }}>
-              A workplace assessment of your spoken and written English. Take a few
-              quiet minutes, and you're ready to begin.
+              {isShort
+                ? 'A quick placement check of your written English — grammar and workplace reading. Take a few quiet minutes, and you\'re ready to begin.'
+                : 'A workplace assessment of your spoken and written English. Take a few quiet minutes, and you\'re ready to begin.'}
             </p>
           </div>
 
@@ -176,9 +198,10 @@ export default function Landing({ onExit }) {
           <SectionCard
             accent="muted"
             icon={ETIcon.book}
-            label={isShort ? 'Reading' : 'Section 2 · Reading'}
+            label={isShort ? 'Grammar & Reading' : 'Section 2 · Reading'}
             summary={`${readingQs} Qs · ${readingMin || '—'} min`}
-            parts={readingParts}
+            parts={isShort ? shortRows : readingParts}
+            isShort={isShort}
           />
         </div>
       </div>

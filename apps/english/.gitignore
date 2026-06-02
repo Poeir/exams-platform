@@ -51,6 +51,8 @@ coverage
 # English test remix folder
 english-test-remix/
 
-# papers_export_1
+# Exam content + answer keys — seeded out-of-band, never committed
 papers_export_1_full_old.json
 papers_export_1_full.json
+papers_export_2_short.json
+Quick_Placement_Test_15min_final_10of10.json

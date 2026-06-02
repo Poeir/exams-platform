@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { levelFor } from './cefr.js';
 
-describe('levelFor', () => {
+describe('levelFor (full, 50 items)', () => {
   it('maps 0 → L1 Beginner', () => {
     expect(levelFor(0)).toMatchObject({ level: 1, label: 'Beginner' });
   });
@@ -28,5 +28,30 @@ describe('levelFor', () => {
     expect(levelFor(null).level).toBe(1);
     expect(levelFor(undefined).level).toBe(1);
     expect(levelFor('nope').level).toBe(1);
+  });
+  it('treats an unknown variant as full', () => {
+    expect(levelFor(42, 'something-else').level).toBe(5);
+  });
+});
+
+// The short 20-item placement paper: 0–6 Beginner, 7–15 Intermediate,
+// 16–20 Advanced (assessment team's banding).
+describe('levelFor (short, 20 items)', () => {
+  it('maps 0 → L1 Beginner', () => {
+    expect(levelFor(0, 'short')).toMatchObject({ level: 1, label: 'Beginner' });
+  });
+  it('maps boundary 6 → L1, 7 → L2', () => {
+    expect(levelFor(6, 'short')).toMatchObject({ level: 1, label: 'Beginner' });
+    expect(levelFor(7, 'short')).toMatchObject({ level: 2, label: 'Intermediate' });
+  });
+  it('maps boundary 15 → L2, 16 → L3', () => {
+    expect(levelFor(15, 'short')).toMatchObject({ level: 2, label: 'Intermediate' });
+    expect(levelFor(16, 'short')).toMatchObject({ level: 3, label: 'Advanced' });
+  });
+  it('caps at L3 Advanced for a perfect 20/20', () => {
+    expect(levelFor(20, 'short')).toMatchObject({ level: 3, label: 'Advanced' });
+  });
+  it('falls back to L1 for non-numeric / null', () => {
+    expect(levelFor(null, 'short').level).toBe(1);
   });
 });

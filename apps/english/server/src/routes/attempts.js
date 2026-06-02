@@ -100,13 +100,25 @@ async function loadPaper(paperId, withAnswers) {
   return { paper: rowToPaper(paper), sections };
 }
 
-// Items + their section name for scoring. The answer key never leaves the server.
+// Items + their section name/skill for scoring. The answer key never leaves
+// the server. Rows are ordered like loadPaper so native-structure papers (no
+// "Part N" in section names) keep their section order in the parts breakdown.
 async function loadAnswerKey(paperId, client = prisma) {
   const items = await client.item.findMany({
     where: { section: { paper_id: paperId } },
-    select: { id: true, correct_answer: true, section: { select: { name: true } } },
+    orderBy: [
+      { section: { part_number: 'asc' } },
+      { section: { order_index: 'asc' } },
+      { order_index: 'asc' },
+    ],
+    select: { id: true, correct_answer: true, section: { select: { name: true, skill: true } } },
   });
-  return items.map((i) => ({ id: i.id, correct_answer: i.correct_answer, section_name: i.section.name }));
+  return items.map((i) => ({
+    id: i.id,
+    correct_answer: i.correct_answer,
+    section_name: i.section.name,
+    section_skill: i.section.skill,
+  }));
 }
 
 // 1. Parent backend → POST /api/sessions
@@ -469,7 +481,13 @@ router.post('/attempts/:id/submit', async (req, res, next) => {
       const result = scoreAnswers(keyRows, finalAnswers);
       const correctTotal = result.skills.total.correct;
       const maxTotal = result.skills.total.total;
-      const lvl = levelFor(correctTotal);
+      // CEFR banding differs per question set: the full 50-item paper uses the
+      // 5-band table, the short 20-item paper the 3-band one (see cefr.js).
+      const paperRow = await tx.paper.findUnique({
+        where: { id: a.paper_id },
+        select: { name: true },
+      });
+      const lvl = levelFor(correctTotal, paperVariant(paperRow ? paperRow.name : ''));
 
       const upd = await tx.attempt.updateMany({
         where: { id, status: 'in_progress' },

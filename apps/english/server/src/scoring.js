@@ -16,9 +16,16 @@ const PART_META = {
 // Compare submitted answers against the keys held in the DB and return only
 // aggregate totals — never per-item correctness, so a test taker cannot
 // brute-force the key by submitting repeatedly. `rows` are item rows joined to
-// their section name: { id, correct_answer, section_name }.
+// their section: { id, correct_answer, section_name, section_skill }.
+//
+// Two paper structures are scored (mirrors buildExam in src/data/exam.js):
+// - TOEIC-style: section names carry "Part N" → folded into PART_META parts.
+// - Native (e.g. the short placement paper): no part number in the name, so
+//   the skill comes from the section row and each section is its own entry in
+//   the parts breakdown, in row order.
 export function scoreAnswers(rows, answers = {}) {
-  const parts = new Map(); // partNumber -> { correct, total }
+  const parts = new Map(); // part number | section name -> entry
+  let order = 0;
   const skills = {
     listening:  { correct: 0, total: 0 },
     vocabulary: { correct: 0, total: 0 },
@@ -28,29 +35,40 @@ export function scoreAnswers(rows, answers = {}) {
 
   for (const row of rows) {
     const part = parsePartNumber(row.section_name);
-    const meta = PART_META[part];
-    if (!meta) continue;
+    const meta = part ? PART_META[part] : null;
+    const skillKey = meta ? meta.skill : row.section_skill;
+    const sk = skills[skillKey];
+    if (!sk) continue; // neither a known part nor a known skill — not scored
 
     const isCorrect = answers[row.id] != null && answers[row.id] === row.correct_answer;
 
-    if (!parts.has(part)) parts.set(part, { correct: 0, total: 0 });
-    const pe = parts.get(part);
+    const key = meta ? part : row.section_name;
+    if (!parts.has(key)) {
+      parts.set(key, {
+        part: meta ? part : null,
+        title: meta ? meta.title : row.section_name,
+        section: (meta ? meta.section : skillKey) === 'listening' ? 'Listening' : 'Reading',
+        correct: 0,
+        total: 0,
+        // Numbered parts sort by part number; native sections keep row order
+        // (the route orders rows by section order_index) after any numbered ones.
+        order: meta ? part : 1000 + order++,
+      });
+    }
+    const pe = parts.get(key);
     pe.total += 1;
     if (isCorrect) pe.correct += 1;
 
-    const sk = skills[meta.skill];
-    if (sk) {
-      sk.total += 1;
-      if (isCorrect) sk.correct += 1;
-    }
+    sk.total += 1;
+    if (isCorrect) sk.correct += 1;
   }
 
-  const partsArr = [...parts.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([n, v]) => ({
-      id: n,
-      title: PART_META[n].title,
-      section: PART_META[n].section === 'listening' ? 'Listening' : 'Reading',
+  const partsArr = [...parts.values()]
+    .sort((a, b) => a.order - b.order)
+    .map((v, i) => ({
+      id: v.part ?? i + 1,
+      title: v.title,
+      section: v.section,
       correct: v.correct,
       total: v.total,
     }));

@@ -809,13 +809,22 @@ export default function ExamSection({ section, onFlowNext, onFlowPrev, onExit })
   }
   const runningNumber = examOffset + partPosition;
 
-  const sectionLabel = section === 'listening' ? 'Section 1 · Listening' : 'Section 2 · Reading';
-  const crumbs = [{ text: sectionLabel }, { text: `Part ${currentPart.number} · ${currentPart.title}`, strong: true }];
+  // The short placement paper is a single self-contained test — no
+  // "Section 1/2" framing, and its parts are the paper's own sections.
+  const sectionLabel = version === 'short'
+    ? 'Placement Test'
+    : section === 'listening' ? 'Section 1 · Listening' : 'Section 2 · Reading';
+  const partCrumb = version === 'short'
+    ? currentPart.title
+    : `Part ${currentPart.number} · ${currentPart.title}`;
+  const crumbs = [{ text: sectionLabel }, { text: partCrumb, strong: true }];
   const nextLabel = atSectionEnd
     ? (section === 'listening' ? 'Finish Listening section' : 'Finish Reading section')
     : 'Next';
   const canGoPrevious = !isReading || !isFirstPart || !isFirstGroup;
-  const isPhoto = !currentPart.showPassage && currentPart.number === 1;
+  // Photographs are listening Part 1 only — a native-structure paper's first
+  // part (e.g. the short paper's "Grammar A2") must not render a photo area.
+  const isPhoto = section === 'listening' && !currentPart.showPassage && currentPart.number === 1;
   // Listening parts hide the transcript, so they don't need a split layout —
   // collapse Conversations (Part 3) and Short Talks (Part 4) into the same
   // single-column layout used by Photographs (Part 1).
@@ -851,7 +860,9 @@ export default function ExamSection({ section, onFlowNext, onFlowPrev, onExit })
 
   // In strict listening, gate the Next button behind a 0-countdown (auto-advance handles it).
   // Reading is always free-paced — Next/Prev work normally.
-  const readingToolsActive = isReading && currentPart.number === 7 && !!group.passage;
+  // Highlight tools go with reading-comprehension passages, whichever part
+  // number they carry (Part 7 on the full paper, native sections on the short).
+  const readingToolsActive = isReading && currentPart.skill === 'reading' && !!group.passage;
   const readingAnnotationKey = `${currentPart.number}-${groupIndex}`;
   const currentReadingHighlights = readingHighlights[readingAnnotationKey] || [];
   const createReadingHighlight = ({ start, end, text, rect }) => {

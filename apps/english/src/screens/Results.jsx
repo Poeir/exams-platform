@@ -34,6 +34,27 @@ const LEVEL_GUIDE = [
   },
 ];
 
+// The short 20-item placement paper bands on RAW points (not the normalized
+// 0–100 scale): 0–6 Beginner, 7–15 Intermediate, 16–20 Advanced — the
+// assessment team's mapping, mirrored server-side in server/src/cefr.js.
+const SHORT_LEVEL_GUIDE = [
+  {
+    level: 1, min: 0, max: 6, label: 'Beginner',
+    desc: 'The test taker has a basic, limited command of English. They can understand some everyday words and very simple sentences, but workplace emails, instructions, and longer sentences are still difficult.',
+    advice: 'At this level, the learner should focus on high-frequency vocabulary, simple tenses, and short everyday sentences before moving on to workplace English.',
+  },
+  {
+    level: 2, min: 7, max: 15, label: 'Intermediate',
+    desc: 'The test taker can handle everyday and routine workplace English. They understand short emails, notices, and common grammar, but nuanced wording, formal register, and complex sentences can still cause problems.',
+    advice: 'At this level, the learner should practice reading real workplace texts and strengthen tense, modal, and conditional usage to become more accurate.',
+  },
+  {
+    level: 3, min: 16, max: 20, label: 'Advanced',
+    desc: 'The test taker has a strong command of English, including formal register, nuanced inference, and advanced grammar. They can read workplace memos and policy documents with high accuracy.',
+    advice: 'At this level, the learner is ready for demanding English-language work and can keep refining fluency, advanced vocabulary, and professional writing.',
+  },
+];
+
 const MAX_SCORE = 100;
 
 function normalizeScore(correct, total) {
@@ -46,8 +67,8 @@ function pctOf(correct, total) {
   return Math.round((correct / total) * 100);
 }
 
-function levelFor(score) {
-  return LEVEL_GUIDE.find((l) => score >= l.min && score <= l.max) || LEVEL_GUIDE[0];
+function levelFor(guide, score) {
+  return guide.find((l) => score >= l.min && score <= l.max) || guide[0];
 }
 
 // Placeholder. Wire this to the parent-supplied subject identity on the
@@ -116,7 +137,7 @@ function SkillCheck({ label }) {
   );
 }
 
-function CertificateHero({ user, activeLevel, normalizedScore, sections, issuedAt }) {
+function CertificateHero({ user, activeLevel, score, maxScore, pct, sections, issuedAt }) {
   const initials = getInitials(user.name);
   const issued = (issuedAt ? new Date(issuedAt) : new Date())
     .toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -159,7 +180,7 @@ function CertificateHero({ user, activeLevel, normalizedScore, sections, issuedA
 
       {/* score gauge */}
       <div style={{ marginTop: 34, marginBottom: 28 }}>
-        <CircularGauge pct={normalizedScore} size={236} stroke={16}>
+        <CircularGauge pct={pct} size={236} stroke={16}>
           <span style={{
             fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: 'var(--color-primary)', marginBottom: 2,
@@ -167,9 +188,9 @@ function CertificateHero({ user, activeLevel, normalizedScore, sections, issuedA
           <span style={{
             fontSize: 56, fontWeight: 700, color: 'var(--fg-1)',
             letterSpacing: '-0.03em', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
-          }}>{normalizedScore}</span>
+          }}>{score}</span>
           <span style={{ fontSize: 14, color: 'var(--fg-3)', fontWeight: 600, marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
-            / {MAX_SCORE}
+            / {maxScore}
           </span>
         </CircularGauge>
       </div>
@@ -193,7 +214,7 @@ function CertificateHero({ user, activeLevel, normalizedScore, sections, issuedA
   );
 }
 
-function BandReference({ activeLevel }) {
+function BandReference({ guide, activeLevel }) {
   return (
     <div style={{ marginTop: 40 }}>
       <h3 className="gf-h5" style={{ margin: 0, marginBottom: 16, textAlign: 'center' }}>
@@ -201,10 +222,10 @@ function BandReference({ activeLevel }) {
       </h3>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: `repeat(${LEVEL_GUIDE.length}, 1fr)`,
+        gridTemplateColumns: `repeat(${guide.length}, 1fr)`,
         gap: 10,
       }}>
-        {LEVEL_GUIDE.map((l) => {
+        {guide.map((l) => {
           const state = l.level === activeLevel.level
             ? 'active'
             : l.level < activeLevel.level
@@ -333,10 +354,17 @@ function LevelHighlight({ activeLevel }) {
 // highlight). Shared between the candidate's own Results screen and the
 // parent-site read-only view (src/screens/ResultViewer.jsx) so both render the
 // exact same layout. `skills` is the scored-skills object the server returns
-// ({ listening, vocabulary, grammar, reading, total }).
-export function ResultCertificate({ user, skills, issuedAt }) {
-  const normalizedScore = normalizeScore(skills.total.correct, skills.total.total);
-  const activeLevel = levelFor(normalizedScore);
+// ({ listening, vocabulary, grammar, reading, total }). `variant` picks the
+// score-band guide: the full paper bands on the normalized 0–100 score, the
+// short placement paper on raw points out of 20.
+export function ResultCertificate({ user, skills, issuedAt, variant = 'full' }) {
+  const isShort = variant === 'short';
+  const guide = isShort ? SHORT_LEVEL_GUIDE : LEVEL_GUIDE;
+  const score = isShort
+    ? skills.total.correct
+    : normalizeScore(skills.total.correct, skills.total.total);
+  const maxScore = isShort ? skills.total.total : MAX_SCORE;
+  const activeLevel = levelFor(guide, score);
 
   // Two-section view (matches the certificate's skill checks + gauges). The
   // reading section rolls up vocabulary + grammar + reading comprehension.
@@ -357,11 +385,13 @@ export function ResultCertificate({ user, skills, issuedAt }) {
         <CertificateHero
           user={user}
           activeLevel={activeLevel}
-          normalizedScore={normalizedScore}
+          score={score}
+          maxScore={maxScore}
+          pct={pctOf(skills.total.correct, skills.total.total)}
           sections={sections}
           issuedAt={issuedAt}
         />
-        <BandReference activeLevel={activeLevel} />
+        <BandReference guide={guide} activeLevel={activeLevel} />
         <SectionGauges sections={sections} />
       </div>
 
@@ -373,7 +403,7 @@ export function ResultCertificate({ user, skills, issuedAt }) {
 }
 
 export default function Results() {
-  const { exam, answers, attemptId, submitFinal } = useExam();
+  const { exam, answers, attemptId, submitFinal, version } = useExam();
   // Scoring happens on the server so the answer key never reaches the client.
   // In session mode (parent-launched), submitFinal hits /attempts/:id/submit —
   // server snapshots onto the attempt row and pushes to the parent's callback.
@@ -427,7 +457,7 @@ export default function Results() {
 
       <div className="et-results et-results--dim">
         <div className="et-results__inner">
-          <ResultCertificate user={DEFAULT_USER} skills={result.skills} />
+          <ResultCertificate user={DEFAULT_USER} skills={result.skills} variant={version} />
         </div>
       </div>
     </div>

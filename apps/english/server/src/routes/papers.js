@@ -64,9 +64,19 @@ router.post('/papers/:id/score', async (req, res, next) => {
 
     const items = await prisma.item.findMany({
       where: { section: { paper_id: id } },
-      select: { id: true, correct_answer: true, section: { select: { name: true } } },
+      orderBy: [
+        { section: { part_number: 'asc' } },
+        { section: { order_index: 'asc' } },
+        { order_index: 'asc' },
+      ],
+      select: { id: true, correct_answer: true, section: { select: { name: true, skill: true } } },
     });
-    const rows = items.map((i) => ({ id: i.id, correct_answer: i.correct_answer, section_name: i.section.name }));
+    const rows = items.map((i) => ({
+      id: i.id,
+      correct_answer: i.correct_answer,
+      section_name: i.section.name,
+      section_skill: i.section.skill,
+    }));
 
     res.json(scoreAnswers(rows, answers));
   } catch (err) { next(err); }

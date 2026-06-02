@@ -119,3 +119,40 @@ describe('scoreAnswers', () => {
     expect(parts[0]).toMatchObject({ id: 3, correct: 2, total: 2 });
   });
 });
+
+// Native-structure papers (the short placement paper): section names carry no
+// "Part N", so the skill comes from the section row and each section is its
+// own entry in the parts breakdown, in row order.
+describe('scoreAnswers (native structure)', () => {
+  const nat = (id, correct_answer, section_name, section_skill) =>
+    ({ id, correct_answer, section_name, section_skill });
+
+  const rows = [
+    nat('g1', 'A', 'Grammar A2', 'grammar'),
+    nat('g2', 'B', 'Grammar A2', 'grammar'),
+    nat('r1', 'C', 'Reading B1', 'reading'),
+    nat('g3', 'D', 'Grammar C1', 'grammar'),
+  ];
+
+  it('buckets skills from the section skill column', () => {
+    const { skills } = scoreAnswers(rows, { g1: 'A', g2: 'X', r1: 'C', g3: 'D' });
+    expect(skills.grammar).toEqual({ correct: 2, total: 3 });
+    expect(skills.reading).toEqual({ correct: 1, total: 1 });
+    expect(skills.listening).toEqual({ correct: 0, total: 0 });
+    expect(skills.total).toEqual({ correct: 3, total: 4 });
+  });
+
+  it('keeps one parts entry per section, in row order, titled by section name', () => {
+    const { parts } = scoreAnswers(rows, {});
+    expect(parts).toEqual([
+      { id: 1, title: 'Grammar A2', section: 'Reading', correct: 0, total: 2 },
+      { id: 2, title: 'Reading B1', section: 'Reading', correct: 0, total: 1 },
+      { id: 3, title: 'Grammar C1', section: 'Reading', correct: 0, total: 1 },
+    ]);
+  });
+
+  it('still skips rows with neither a known part nor a known skill', () => {
+    const { skills } = scoreAnswers([nat('x', 'A', 'Warmup', 'mystery')], { x: 'A' });
+    expect(skills.total).toEqual({ correct: 0, total: 0 });
+  });
+});

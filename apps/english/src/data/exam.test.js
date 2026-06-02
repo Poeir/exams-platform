@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExam, partsBySection, totalsBySection, getOptionLetters, unansweredItems } from './exam.js';
+import { buildExam, partsBySection, totalsBySection, getOptionLetters, unansweredItems, paperVariant } from './exam.js';
 
 // A small bundle in the API's GET /api/papers/:id shape: { paper, sections }.
 function makeBundle() {
@@ -86,6 +86,57 @@ describe('buildExam', () => {
     expect(buildExam(bundle).parts[0].timeMin).toBe(0);
   });
 
+  // Native-structure papers (the short placement paper): no section name has
+  // a part number, so each section becomes its own part, in bundle order,
+  // keeping the paper's real structure instead of the TOEIC part folding.
+  describe('native structure (no "Part N" section names)', () => {
+    const nativeBundle = () => ({
+      paper: { id: 'p-native', name: 'Quick Placement Test (15 min) - Short' },
+      sections: [
+        { id: 's1', name: 'Grammar A2', skill: 'grammar', cefr: 'A2', section_time_min: 2, passage_content: '', items: [{ id: 'g1' }, { id: 'g2' }] },
+        { id: 's2', name: 'Reading B1', skill: 'reading', cefr: 'B1', section_time_min: 3, passage_content: 'A memo', items: [{ id: 'r1' }, { id: 'r2' }] },
+        { id: 's3', name: 'Grammar C1', skill: 'grammar', cefr: 'C1', section_time_min: 3, passage_content: '', items: [{ id: 'g3' }] },
+      ],
+    });
+
+    it('keeps the bundle order and titles parts by skill (no CEFR band shown)', () => {
+      const exam = buildExam(nativeBundle());
+      expect(exam.parts.map((p) => [p.number, p.title])).toEqual([
+        [1, 'Grammar'], [2, 'Reading'], [3, 'Grammar'],
+      ]);
+      // The real section name (with its band) stays on the group for
+      // internal use — it is never shown as a candidate-facing title.
+      expect(exam.parts[0].groups[0].label).toBe('Grammar A2');
+    });
+
+    it('takes skill from the section row, never attaches audio, and lands in the reading section', () => {
+      const exam = buildExam(nativeBundle());
+      expect(exam.parts.map((p) => p.skill)).toEqual(['grammar', 'reading', 'grammar']);
+      expect(exam.parts.every((p) => p.audio === null)).toBe(true);
+      expect(partsBySection(exam, 'listening')).toEqual([]);
+      expect(partsBySection(exam, 'reading')).toHaveLength(3);
+    });
+
+    it('groups passage sections as one passage+items group, others one item per group', () => {
+      const exam = buildExam(nativeBundle());
+      const [grammar, reading] = exam.parts;
+      expect(grammar.showPassage).toBe(false);
+      expect(grammar.groups).toHaveLength(2);
+      expect(grammar.groups[0].items).toHaveLength(1);
+      expect(reading.showPassage).toBe(true);
+      expect(reading.groups).toHaveLength(1);
+      expect(reading.groups[0].passage).toBe('A memo');
+      expect(reading.groups[0].items).toHaveLength(2);
+    });
+
+    it('uses each section\'s own time and item totals', () => {
+      const exam = buildExam(nativeBundle());
+      expect(exam.parts.map((p) => p.timeMin)).toEqual([2, 3, 3]);
+      expect(exam.parts.map((p) => p.totalItems)).toEqual([2, 2, 1]);
+      expect(exam.flat).toHaveLength(5);
+    });
+  });
+
   // The short, reading-only paper: ExamContext derives version='short' from
   // partsBySection(exam, 'listening') being empty.
   it('builds a reading-only exam (no listening parts) from a Part 5–7 bundle', () => {
@@ -100,6 +151,19 @@ describe('buildExam', () => {
     expect(exam.parts.map((p) => p.number)).toEqual([5, 7]);
     expect(partsBySection(exam, 'listening')).toEqual([]);
     expect(partsBySection(exam, 'reading').map((p) => p.number)).toEqual([5, 7]);
+  });
+});
+
+// Mirrors paperVariant() in server/src/shape.js — same name convention.
+describe('paperVariant', () => {
+  it('marks papers named with the word "short" (or Thai สั้น) as short', () => {
+    expect(paperVariant('Quick Placement Test (15 min) - Short')).toBe('short');
+    expect(paperVariant('ข้อสอบฉบับสั้น 15 นาที')).toBe('short');
+  });
+  it('treats everything else (and null) as full', () => {
+    expect(paperVariant('English Competency Test')).toBe('full');
+    expect(paperVariant('Shortlist Assessment')).toBe('full');
+    expect(paperVariant(null)).toBe('full');
   });
 });
 

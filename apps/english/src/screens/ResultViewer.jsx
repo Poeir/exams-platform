@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ETTopbar } from '../components/Common.jsx';
 import { ResultCertificate } from './Results.jsx';
+import { paperVariant } from '../data/exam.js';
 import { withBase } from '../lib/base.js';
 
 // Read-only result page for the parent site ("open result in a new tab").
@@ -67,6 +68,7 @@ export default function ResultViewer() {
               }}
               skills={state.data.result?.skills}
               issuedAt={state.data.completedAt}
+              variant={paperVariant(state.data.paperName)}
             />
           )}
         </div>
