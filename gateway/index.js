@@ -89,7 +89,7 @@ gateway.get('/', (_req, res) => {
 </style></head>
 <body><main>
   <h1>Gofive Assessments</h1>
-  <a class="english" href="/english/">English Proficiency Test<small>ชุดเต็ม · Listening + Reading · 50 นาที</small></a>
+  <a class="english" href="/english/exam/full">English Proficiency Test<small>ชุดเต็ม · Listening + Reading · 50 นาที</small></a>
   <a class="english-short" href="/english/exam/short">English Placement Test<small>ชุดสั้น · Grammar + Reading · 15 นาที</small></a>
   <a class="mbti" href="/mbti/">MBTI Workplace Assessment<small>แบบประเมินบุคลิกภาพ · 14 ข้อ</small></a>
 </main></body></html>`);
