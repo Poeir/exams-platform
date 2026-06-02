@@ -82,13 +82,16 @@ gateway.get('/', (_req, res) => {
   main { text-align: center; }
   h1 { font-weight: 600; color: #1f2430; }
   a { display: inline-block; margin: 0.5rem; padding: 0.9rem 1.6rem; border-radius: 10px; text-decoration: none; color: #fff; font-weight: 600; }
+  a small { display: block; font-weight: 500; font-size: 0.78rem; opacity: 0.85; margin-top: 0.15rem; }
   .english { background: #2f6fed; }
+  .english-short { background: #1d9bf0; }
   .mbti { background: #f05b2f; }
 </style></head>
 <body><main>
   <h1>Gofive Assessments</h1>
-  <a class="english" href="/english/">English Proficiency Test</a>
-  <a class="mbti" href="/mbti/">MBTI Workplace Assessment</a>
+  <a class="english" href="/english/">English Proficiency Test<small>ชุดเต็ม · Listening + Reading · 50 นาที</small></a>
+  <a class="english-short" href="/english/exam/short">English Placement Test<small>ชุดสั้น · Grammar + Reading · 15 นาที</small></a>
+  <a class="mbti" href="/mbti/">MBTI Workplace Assessment<small>แบบประเมินบุคลิกภาพ · 14 ข้อ</small></a>
 </main></body></html>`);
 });
 
