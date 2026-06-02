@@ -9,8 +9,7 @@ info:
 
     Authentication is split between two audiences:
     - **Parent website (server-to-server)** sends the shared `X-API-Key`
-      header (unified name across both assessment engines; the legacy
-      `x-service-key` header is still accepted as an alias) to create
+      header (unified name across both assessment engines) to create
       attempts and read subject history.
     - **Test app (browser)** receives an opaque attempt token via the launch
       URL and submits it as a `Bearer` token to complete the attempt and
@@ -56,7 +55,7 @@ paths:
       summary: Create an assessment attempt
       description: |
         Called server-to-server by the parent backend after it has authenticated
-        a user. Returns an opaque `attemptToken` and a `testUrl` that the
+        a user. Returns an opaque `attemptToken` and a `launchUrl` that the
         parent forwards to the user's browser to launch the test.
       security:
         - ParentServiceKey: []
@@ -219,7 +218,7 @@ paths:
       summary: Mint a short-lived result view link for the parent site
       description: |
         Exchanges the parent service key for a signed, short-lived URL
-        (default 15 minutes, `VIEW_LINK_TTL_MINUTES`) that opens the result
+        (default 15 minutes, `VIEW_LINK_TTL_MIN`) that opens the result
         screen read-only in a browser — the "open result in a new tab" flow.
         The token is stateless (HMAC over attempt id + expiry); nothing is
         stored. Only completed attempts can be viewed.
@@ -378,7 +377,6 @@ components:
       description: |
         Shared secret used by the parent backend server-to-server
         (env PARENT_API_KEY — same header name as the english-test engine).
-        The legacy `x-service-key` header is still accepted as an alias.
     AttemptToken:
       type: http
       scheme: bearer
@@ -454,7 +452,7 @@ components:
         id:
           type: string
           format: uuid
-          description: Attempt id (also referenced in `testUrl`).
+          description: Attempt id (also referenced in `launchUrl`).
         attemptToken:
           type: string
           description: Opaque token returned only once. Forward to the user.
@@ -470,10 +468,12 @@ components:
         expiresAt:
           type: string
           format: date-time
-        testUrl:
+        launchUrl:
           type: string
           format: uri
-          description: Launch URL with `attempt_id` and `attempt_token` query params.
+          description: |
+            Launch URL with `attempt_id` and `attempt_token` query params.
+            Unified field name across both assessment engines (was `testUrl`).
 
     CompleteAttemptRequest:
       type: object

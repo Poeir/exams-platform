@@ -193,9 +193,9 @@ app.use((error, request, response, next) => {
 
 function requireParentService(request, response, next) {
   // X-API-Key is the unified parent-auth header across both assessment
-  // engines (english-test uses the same name); x-service-key is the legacy
-  // mbti-only header, accepted as an alias for older integrations.
-  const presented = request.get('x-api-key') || request.get('x-service-key');
+  // engines (english-test uses the same name). The legacy x-service-key
+  // alias was dropped when the parent contract was unified.
+  const presented = request.get('x-api-key');
   if (!securelyMatches(presented, config.parentApiKey)) {
     logger.warn('parent_service_auth_failed', {
       requestId: request.id,

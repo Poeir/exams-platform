@@ -4,7 +4,7 @@ import { BASE } from './base.js';
 
 const API_BASE_URL = import.meta.env.VITE_MBTI_API_BASE_URL || BASE;
 const DEV_PARENT_SERVICE_KEY = import.meta.env.DEV
-  ? import.meta.env.VITE_PARENT_API_KEY || import.meta.env.VITE_PARENT_SERVICE_KEY || 'dev-parent-key'
+  ? import.meta.env.VITE_PARENT_API_KEY || 'dev-parent-key'
   : '';
 
 export async function createServiceAttempt(user) {

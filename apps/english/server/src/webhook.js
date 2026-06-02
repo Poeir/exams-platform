@@ -5,6 +5,7 @@ import { log } from './logger.js';
 
 const TIMEOUT_MS = () => Number(process.env.WEBHOOK_TIMEOUT_MS) || 8000;
 const MAX_ATTEMPTS = () => Number(process.env.WEBHOOK_MAX_ATTEMPTS) || 5;
+const ENGINE_VERSION = '1.0';
 
 function sign(bodyString, secret) {
   return 'sha256=' + createHmac('sha256', secret).update(bodyString).digest('hex');
@@ -48,21 +49,27 @@ export async function deliverResult(attemptId) {
     return false;
   }
 
+  // camelCase + status 'completed': the unified webhook envelope shared with
+  // the mbti engine (same keys: attemptId/subjectId/sourceSystem/
+  // externalUserId/status/completedAt/result/engineVersion), so the parent
+  // deserialises one shape for both. paperId + the score summary fields are
+  // english-specific extras.
   const payload = {
-    attempt_id: a.id,
-    paper_id: a.paper_id,
+    attemptId: a.id,
+    paperId: a.paper_id,
     // Candidate identity (shared.subjects) — null for anonymous attempts.
-    // Parents correlate primarily by attempt_id (returned at session create).
-    subject_id: a.subject_id,
-    source_system: a.subject ? a.subject.source_system : null,
-    external_user_id: a.subject ? a.subject.external_user_id : null,
-    status: a.status,
-    submitted_at: a.submitted_at,
-    correct_total: a.correct_total,
-    max_total: a.max_total,
-    cefr_level: a.cefr_level,
-    cefr_label: a.cefr_label,
+    // Parents correlate primarily by attemptId (returned at session create).
+    subjectId: a.subject_id,
+    sourceSystem: a.subject ? a.subject.source_system : null,
+    externalUserId: a.subject ? a.subject.external_user_id : null,
+    status: 'completed',
+    completedAt: a.submitted_at,
+    correctTotal: a.correct_total,
+    maxTotal: a.max_total,
+    cefrLevel: a.cefr_level,
+    cefrLabel: a.cefr_label,
     result: fromDbJson(a.result, null),
+    engineVersion: ENGINE_VERSION,
   };
   const body = JSON.stringify(payload);
 

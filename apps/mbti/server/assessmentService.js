@@ -52,9 +52,9 @@ export async function createAssessmentAttempt(subjectInput) {
     return storedSubject;
   });
 
-  const testUrl = new URL(config.frontendUrl);
-  testUrl.searchParams.set('attempt_id', attemptId);
-  testUrl.searchParams.set('attempt_token', attemptToken);
+  const launchUrl = new URL(config.frontendUrl);
+  launchUrl.searchParams.set('attempt_id', attemptId);
+  launchUrl.searchParams.set('attempt_token', attemptToken);
 
   return {
     id: attemptId,
@@ -63,7 +63,9 @@ export async function createAssessmentAttempt(subjectInput) {
     subjectId: subject.id,
     status: 'started',
     expiresAt: expiresAt.toISOString(),
-    testUrl: testUrl.toString(),
+    // `launchUrl` is the unified field name across both assessment engines
+    // (was `testUrl` here before english-test aligned its contract).
+    launchUrl: launchUrl.toString(),
   };
 }
 

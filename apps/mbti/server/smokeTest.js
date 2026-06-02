@@ -1,7 +1,7 @@
 import { buildPath } from '../src/lib/quizPath.js';
 
 const apiBase = process.env.API_BASE_URL || 'http://localhost:3001';
-const serviceKey = process.env.PARENT_API_KEY || process.env.PARENT_SERVICE_KEY || 'dev-parent-key';
+const serviceKey = process.env.PARENT_API_KEY || 'dev-parent-key';
 const externalUserId = `smoke_${Date.now()}`;
 
 const attempt = await request('/api/v1/assessment-attempts', {

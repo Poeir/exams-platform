@@ -3,10 +3,9 @@
 // Prisma CLI read it and these fallbacks silently took over.
 
 // Parent-service shared secret. PARENT_API_KEY is the unified name across both
-// assessment engines (english-test uses the same); PARENT_SERVICE_KEY is the
-// legacy mbti-only name, kept as a fallback.
+// assessment engines (english-test uses the same). The legacy
+// PARENT_SERVICE_KEY name was dropped when the parent contract was unified.
 const parentApiKey = process.env.PARENT_API_KEY
-  || process.env.PARENT_SERVICE_KEY
   || (process.env.NODE_ENV === 'production' ? null : 'dev-parent-key');
 
 // In production a missing DATABASE_URL must fail fast — the localhost
@@ -30,7 +29,9 @@ export const config = {
   // Result view links handed to the parent site (see security.js). The secret
   // defaults to a value derived from the parent key so dev needs no extra env
   // var; set VIEW_LINK_SECRET explicitly in production.
-  viewLinkTtlMinutes: Number(process.env.VIEW_LINK_TTL_MINUTES || 15),
+  // VIEW_LINK_TTL_MIN is the unified env name across both engines
+  // (english-test uses the same).
+  viewLinkTtlMinutes: Number(process.env.VIEW_LINK_TTL_MIN || 15),
   viewLinkSecret: process.env.VIEW_LINK_SECRET || `view-link:${parentApiKey}`,
   // Result webhook push to the parent's callbackUrl (see webhook.js) —
   // mirrors english-test's WEBHOOK_* envs.

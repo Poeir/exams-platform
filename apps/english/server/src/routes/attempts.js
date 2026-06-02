@@ -47,6 +47,37 @@ function rowToAttempt(row) {
   };
 }
 
+// The terminal status is 'submitted' internally but 'completed' on the wire —
+// the unified vocabulary across both assessment engines (mbti already says
+// 'completed'), so the parent never has to branch per engine.
+function parentStatus(status) {
+  return status === 'submitted' ? 'completed' : status;
+}
+
+// Parent-facing attempt shape: camelCase keys + unified status vocabulary,
+// matching the mbti engine's contract so the parent (empeo) deserialises one
+// shape for both engines. The raw answers map is candidate data and is
+// deliberately omitted. Internal/candidate endpoints keep rowToAttempt.
+function toParentAttempt(row) {
+  return {
+    id: row.id,
+    paperId: row.paper_id,
+    subjectId: row.subject_id,
+    sourceSystem: row.subject ? row.subject.source_system : null,
+    externalUserId: row.subject ? row.subject.external_user_id : null,
+    status: parentStatus(row.status),
+    correctTotal: row.correct_total,
+    maxTotal: row.max_total,
+    cefrLevel: row.cefr_level,
+    cefrLabel: row.cefr_label,
+    result: fromDbJson(row.result, null),
+    timeLimitMin: row.time_limit_min,
+    startedAt: row.started_at,
+    completedAt: row.submitted_at,
+    expiresAt: row.expires_at,
+  };
+}
+
 // Loads the paper with its sections + items in the same shape GET /api/papers/:id
 // uses. `withAnswers=false` strips the answer key / explanation for taker view.
 async function loadPaper(paperId, withAnswers) {
@@ -79,27 +110,27 @@ async function loadAnswerKey(paperId, client = prisma) {
 }
 
 // 1. Parent backend → POST /api/sessions
-//    Creates a pending attempt + one-time launch_token. Returns the launch_url
+//    Creates a pending attempt + one-time launch token. Returns the launchUrl
 //    the parent should open in a new tab for the candidate.
+//    Request/response keys are camelCase — the unified parent contract across
+//    both assessment engines (mbti was camelCase first; english aligned).
+//    snake_case request keys are still accepted as quiet aliases for older
+//    integrations.
 router.post('/sessions', requireParentAuth, async (req, res, next) => {
   try {
-    const {
-      paper_id,
-      // Candidate identity in the parent's system (mirrors the mbti engine's
-      // contract). Parents that launch both engines should send the SAME
-      // source_system + external_user_id to both, so one person maps to one
-      // shared.subjects row across services. `user_ref` is accepted as a
-      // legacy alias for external_user_id from pre-Phase-2 integrations.
-      external_user_id: externalUserIdInput = null,
-      user_ref = null,
-      source_system = 'english',
-      email = null,
-      display_name = null,
-      callback_url = null,
-      time_limit_min,
-    } = req.body || {};
-    if (!paper_id) return res.status(400).json({ error: 'paper_id is required' });
-    const external_user_id = externalUserIdInput || user_ref;
+    const body = req.body || {};
+    const paper_id = body.paperId ?? body.paper_id;
+    // Candidate identity in the parent's system (same contract as the mbti
+    // engine). Parents that launch both engines should send the SAME
+    // sourceSystem + externalUserId to both, so one person maps to one
+    // shared.subjects row across services.
+    const external_user_id = body.externalUserId ?? body.external_user_id ?? null;
+    const source_system = body.sourceSystem ?? body.source_system ?? 'english';
+    const email = body.email ?? null;
+    const display_name = body.displayName ?? body.display_name ?? null;
+    const callback_url = body.callbackUrl ?? body.callback_url ?? null;
+    const time_limit_min = body.timeLimitMin ?? body.time_limit_min;
+    if (!paper_id) return res.status(400).json({ error: 'paperId is required' });
 
     const paper = await prisma.paper.findUnique({
       where: { id: paper_id },
@@ -164,10 +195,10 @@ router.post('/sessions', requireParentAuth, async (req, res, next) => {
     });
 
     res.status(201).json({
-      attempt: rowToAttempt({ ...attempt, subject }),
-      launch_token: token,
-      launch_token_expires_at: expires.toISOString(),
-      launch_url: `${enginePublicUrl()}/exam?t=${encodeURIComponent(token)}`,
+      attempt: toParentAttempt({ ...attempt, subject }),
+      launchToken: token,
+      launchTokenExpiresAt: expires.toISOString(),
+      launchUrl: `${enginePublicUrl()}/exam?t=${encodeURIComponent(token)}`,
     });
   } catch (err) { next(err); }
 });
@@ -325,9 +356,9 @@ router.post('/attempts/:id/view-link', requireParentAuth, async (req, res, next)
     const token = createViewToken(attempt.id);
     req.log.info('result_view_link_created', { attempt_id: attempt.id });
     res.status(201).json({
-      attempt_id: attempt.id,
-      view_url: `${enginePublicUrl()}/result?vt=${encodeURIComponent(token)}`,
-      expires_at: new Date(Date.now() + viewLinkTtlMs()).toISOString(),
+      attemptId: attempt.id,
+      viewUrl: `${enginePublicUrl()}/result?view_token=${encodeURIComponent(token)}`,
+      expiresAt: new Date(Date.now() + viewLinkTtlMs()).toISOString(),
     });
   } catch (err) { next(err); }
 });
@@ -335,9 +366,11 @@ router.post('/attempts/:id/view-link', requireParentAuth, async (req, res, next)
 // Browser (opened by the parent site) → read-only result via the signed token.
 // Declared before /attempts/:id so 'view' is not swallowed by the param route.
 // Returns a display summary only — no answer key, no raw answer map.
+// `view_token` is the unified query param across both engines; `vt` is the
+// legacy english-only name, still accepted for links already in flight.
 router.get('/attempts/view', async (req, res, next) => {
   try {
-    const attemptId = verifyViewToken(req.query.vt);
+    const attemptId = verifyViewToken(req.query.view_token || req.query.vt);
     if (!attemptId) return res.status(401).json({ error: 'view link is invalid or has expired' });
 
     const row = await prisma.attempt.findUnique({
@@ -352,18 +385,18 @@ router.get('/attempts/view', async (req, res, next) => {
     }
 
     res.json({
-      view_only: true,
-      attempt_id: row.id,
-      paper_id: row.paper_id,
-      paper_name: row.paper ? row.paper.name : null,
-      display_name: row.subject ? row.subject.display_name_snapshot : null,
-      external_user_id: row.subject ? row.subject.external_user_id : null,
-      source_system: row.subject ? row.subject.source_system : null,
-      submitted_at: row.submitted_at,
-      correct_total: row.correct_total,
-      max_total: row.max_total,
-      cefr_level: row.cefr_level,
-      cefr_label: row.cefr_label,
+      viewOnly: true,
+      attemptId: row.id,
+      paperId: row.paper_id,
+      paperName: row.paper ? row.paper.name : null,
+      displayName: row.subject ? row.subject.display_name_snapshot : null,
+      externalUserId: row.subject ? row.subject.external_user_id : null,
+      sourceSystem: row.subject ? row.subject.source_system : null,
+      completedAt: row.submitted_at,
+      correctTotal: row.correct_total,
+      maxTotal: row.max_total,
+      cefrLevel: row.cefr_level,
+      cefrLabel: row.cefr_label,
       result: fromDbJson(row.result, null),
     });
   } catch (err) { next(err); }
@@ -526,7 +559,7 @@ router.get('/subjects/:source_system/:external_user_id/results', requireParentAu
       orderBy: { submitted_at: 'desc' },
       include: { subject: true },
     });
-    res.json({ results: rows.map(rowToAttempt) });
+    res.json({ results: rows.map(toParentAttempt) });
   } catch (err) { next(err); }
 });
 
@@ -554,10 +587,10 @@ router.post('/subjects/:source_system/:external_user_id/view-link', requireParen
       source_system: req.params.source_system,
     });
     res.status(201).json({
-      attempt_id: attempt.id,
-      submitted_at: attempt.submitted_at,
-      view_url: `${enginePublicUrl()}/result?vt=${encodeURIComponent(token)}`,
-      expires_at: new Date(Date.now() + viewLinkTtlMs()).toISOString(),
+      attemptId: attempt.id,
+      completedAt: attempt.submitted_at,
+      viewUrl: `${enginePublicUrl()}/result?view_token=${encodeURIComponent(token)}`,
+      expiresAt: new Date(Date.now() + viewLinkTtlMs()).toISOString(),
     });
   } catch (err) { next(err); }
 });
@@ -572,7 +605,7 @@ router.get('/attempts', requireParentAuth, async (req, res, next) => {
       take: limit,
       include: { subject: true },
     });
-    res.json(attempts.map(rowToAttempt));
+    res.json(attempts.map(toParentAttempt));
   } catch (err) { next(err); }
 });
 

@@ -273,11 +273,11 @@ sequenceDiagram
     ParentBE->>API: POST /api/v1/assessment-attempts<br/>X-API-Key + { sourceSystem, externalUserId, email, displayName }
     API->>DB: upsert assessment_subjects<br/>(source_system + external_user_id)
     API->>DB: insert assessment_attempts<br/>(status='started', hash ของ token)
-    API-->>ParentBE: 201 { id, attemptToken, testUrl }
+    API-->>ParentBE: 201 { id, attemptToken, launchUrl }
     end
 
-    ParentBE-->>Parent: ส่ง testUrl (มี attempt_id + attempt_token ใน query)
-    Parent->>FE: redirect/เปิด testUrl
+    ParentBE-->>Parent: ส่ง launchUrl (มี attempt_id + attempt_token ใน query)
+    Parent->>FE: redirect/เปิด launchUrl
 
     Note over FE: ลบ attempt_token ออกจาก URL ทันที<br/>แล้วเก็บไว้ใน sessionStorage
     User->>FE: ทำแบบทดสอบจนจบ
@@ -306,7 +306,7 @@ sequenceDiagram
 
 | ขั้น | ใคร → ใคร | Auth | ผลลัพธ์ |
 | --- | --- | --- | --- |
-| สร้าง attempt | เว็บแม่ backend → MBTI API | `X-API-Key` | ได้ `testUrl` + `attemptToken` |
+| สร้าง attempt | เว็บแม่ backend → MBTI API | `X-API-Key` | ได้ `launchUrl` + `attemptToken` |
 | เปิดแบบทดสอบ | browser → MBTI frontend | token ใน URL → sessionStorage | เริ่มทำ quiz |
 | ส่งคำตอบ | frontend → MBTI API | `Bearer <token>` | backend re-score + เก็บผล |
 | โหลดผล | frontend → MBTI API | `Bearer <token>` | แสดงผล MBTI |
@@ -330,7 +330,7 @@ Content-Type: application/json
 { "sourceSystem": "main_web", "externalUserId": "usr_123", "email": "...", "displayName": "..." }
 ```
 
-Response มี `testUrl` ที่มี `attempt_token` (opaque) ใน query — frontend จะลบ token ออกจาก URL ทันทีและเก็บใน `sessionStorage`
+Response มี `launchUrl` ที่มี `attempt_token` (opaque) ใน query — frontend จะลบ token ออกจาก URL ทันทีและเก็บใน `sessionStorage`
 
 ### Frontend ส่งคำตอบ
 

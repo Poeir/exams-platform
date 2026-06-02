@@ -96,7 +96,7 @@ Response:
   "id": "attempt-uuid",
   "attemptToken": "opaque-token",
   "userId": "usr_123",
-  "testUrl": "http://localhost:5174/?attempt_id=...&attempt_token=..."
+  "launchUrl": "http://localhost:5174/?attempt_id=...&attempt_token=..."
 }
 ```
 
@@ -109,7 +109,7 @@ X-API-Key: <PARENT_API_KEY>
 
 ## Test App Completion API
 
-The frontend receives an opaque token through the `testUrl`, removes it from
+The frontend receives an opaque token through the `launchUrl`, removes it from
 the visible URL, and submits it as a bearer token when the quiz is complete:
 
 ```http
@@ -164,4 +164,4 @@ For `Azure SQL service`:
 5. Switch users or refresh to verify results are read from Azure SQL.
 
 In production, the fake-user panel is not included; the parent backend creates
-attempts and opens the returned `testUrl`.
+attempts and opens the returned `launchUrl`.

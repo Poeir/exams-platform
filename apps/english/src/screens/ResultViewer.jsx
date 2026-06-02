@@ -4,8 +4,9 @@ import { ResultCertificate } from './Results.jsx';
 import { withBase } from '../lib/base.js';
 
 // Read-only result page for the parent site ("open result in a new tab").
-// Reached at /result?vt=<signed view token>; the token is minted for the
-// parent backend by POST /api/attempts/:id/view-link and expires quickly.
+// Reached at /result?view_token=<signed view token> (legacy ?vt= still
+// works); the token is minted for the parent backend by
+// POST /api/attempts/:id/view-link and expires quickly.
 //
 // Renders the SAME certificate layout as the candidate's Results screen
 // (ResultCertificate, shared from Results.jsx) — but fed from the server's
@@ -16,14 +17,15 @@ export default function ResultViewer() {
   const [state, setState] = useState({ loading: true, error: null, data: null });
 
   useEffect(() => {
-    const vt = new URLSearchParams(window.location.search).get('vt');
+    const params = new URLSearchParams(window.location.search);
+    const vt = params.get('view_token') || params.get('vt');
     if (!vt) {
       setState({ loading: false, error: 'missing view token', data: null });
       return;
     }
     (async () => {
       try {
-        const res = await fetch(withBase(`/api/attempts/view?vt=${encodeURIComponent(vt)}`));
+        const res = await fetch(withBase(`/api/attempts/view?view_token=${encodeURIComponent(vt)}`));
         const payload = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(payload.error || `request failed (${res.status})`);
         setState({ loading: false, error: null, data: payload });
@@ -59,12 +61,12 @@ export default function ResultViewer() {
           {state.data && state.data.result?.skills && (
             <ResultCertificate
               user={{
-                name: state.data.display_name || state.data.external_user_id || 'Anonymous candidate',
-                position: state.data.paper_name || 'English Proficiency Test',
+                name: state.data.displayName || state.data.externalUserId || 'Anonymous candidate',
+                position: state.data.paperName || 'English Proficiency Test',
                 avatarUrl: null,
               }}
               skills={state.data.result?.skills}
-              issuedAt={state.data.submitted_at}
+              issuedAt={state.data.completedAt}
             />
           )}
         </div>
