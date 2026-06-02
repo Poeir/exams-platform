@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gofive Exams × Empeo — Integration Guide</title>
+<style>
+  :root {
+    --orange: #F05B2F;
+    --orange-soft: #FDEFE9;
+    --ink: #1f2430;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --bg: #f7f7f8;
+    --card: #ffffff;
+    --code-bg: #1e2430;
+    --code-fg: #e6e8ee;
+    --green: #16a34a;
+    --blue: #2563eb;
+    --amber: #d97706;
+    --red: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "IBM Plex Sans Thai", "Segoe UI", -apple-system, "Noto Sans Thai", Tahoma, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.65;
+    font-size: 15.5px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px 80px; }
+
+  header.hero {
+    background: linear-gradient(135deg, #20242e 0%, #2d3340 100%);
+    color: #fff;
+    padding: 44px 20px 36px;
+    margin-bottom: 28px;
+  }
+  header.hero .wrap { padding-bottom: 0; }
+  header.hero h1 { margin: 0 0 6px; font-size: 28px; }
+  header.hero h1 .x { color: var(--orange); }
+  header.hero p { margin: 0; color: #c7cbd4; max-width: 700px; }
+  .meta-chips { margin-top: 18px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.18);
+    color: #e6e8ee;
+    border-radius: 999px;
+    padding: 3px 12px;
+    font-size: 12.5px;
+  }
+
+  nav.toc {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 34px;
+  }
+  nav.toc strong { display: block; margin-bottom: 8px; }
+  nav.toc ol { margin: 0; padding-left: 22px; columns: 2; column-gap: 40px; }
+  nav.toc li { margin: 3px 0; break-inside: avoid; }
+  nav.toc a { color: var(--ink); text-decoration: none; }
+  nav.toc a:hover { color: var(--orange); }
+
+  section { margin-bottom: 46px; }
+  h2 {
+    font-size: 21px;
+    border-left: 5px solid var(--orange);
+    padding-left: 12px;
+    margin: 0 0 16px;
+    scroll-margin-top: 16px;
+  }
+  h3 { font-size: 16.5px; margin: 26px 0 10px; }
+  p { margin: 10px 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 22px;
+  }
+
+  .callout {
+    border-left: 4px solid var(--orange);
+    background: var(--orange-soft);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 16px;
+    margin: 14px 0;
+  }
+  .callout.warn { border-left-color: var(--red); background: #fdeaea; }
+  .callout.info { border-left-color: var(--blue); background: #eaf1fd; }
+  .callout strong:first-child { display: inline-block; margin-bottom: 2px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; background: var(--card); font-size: 14.5px; }
+  th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: #f1f2f4; font-weight: 600; }
+  td code, p code, li code {
+    background: #eef0f3;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 13px;
+    font-family: Consolas, "Courier New", monospace;
+  }
+
+  pre {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border-radius: 10px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.55;
+    font-family: Consolas, "Courier New", monospace;
+  }
+  pre .c  { color: #7d879c; }   /* comment */
+  pre .k  { color: #79b8ff; }   /* key */
+  pre .s  { color: #9ecb88; }   /* string */
+  pre .n  { color: #e6b450; }   /* number */
+  pre .hl { color: #ff8a65; }   /* highlight */
+
+  .endpoint {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin: 16px 0;
+    overflow: hidden;
+  }
+  .endpoint .ep-head {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 12px 18px;
+    background: #fafafb;
+    border-bottom: 1px solid var(--line);
+  }
+  .endpoint .ep-head code.path { background: none; font-size: 14px; font-weight: 600; padding: 0; }
+  .endpoint .ep-body { padding: 6px 18px 16px; }
+  .badge {
+    display: inline-block; min-width: 52px; text-align: center;
+    font: 700 12px/1.7 Consolas, monospace;
+    border-radius: 6px; padding: 1px 8px; color: #fff;
+  }
+  .badge.get  { background: var(--green); }
+  .badge.post { background: var(--blue); }
+  .tag {
+    font-size: 11.5px; border-radius: 999px; padding: 2px 10px;
+    border: 1px solid var(--line); color: var(--muted); background: #fff;
+  }
+  .tag.auth { border-color: var(--amber); color: var(--amber); }
+  .tag.open { border-color: var(--green); color: var(--green); }
+
+  /* architecture diagram */
+  .arch { display: grid; grid-template-columns: 1fr auto 1.4fr; gap: 14px; align-items: stretch; margin: 18px 0; }
+  .arch .col { display: flex; flex-direction: column; gap: 14px; justify-content: center; }
+  .node {
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    background: var(--card);
+    padding: 10px 14px;
+    text-align: center;
+  }
+  .node .t { font-weight: 700; }
+  .node .d { font-size: 12.5px; color: var(--muted); }
+  .node.orange { border-color: var(--orange); }
+  .node.orange .t { color: var(--orange); }
+  .gatewaybox {
+    border: 2px solid var(--orange);
+    border-radius: 12px;
+    background: var(--card);
+    padding: 12px 14px;
+  }
+  .gatewaybox .gtitle { font-weight: 700; color: var(--orange); margin-bottom: 8px; text-align: center; }
+  .route {
+    border: 1.5px dashed #b6bcc8;
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin: 6px 0;
+    font-size: 13.5px;
+    background: #fafafb;
+  }
+  .route code { background: #eef0f3; padding: 0 5px; border-radius: 4px; font-size: 12.5px; }
+  .arrows { display: flex; flex-direction: column; gap: 10px; justify-content: center; font-size: 12.5px; color: var(--muted); text-align: center; }
+  .arrow-line { white-space: nowrap; }
+  .arrow-line .ar { color: var(--orange); font-weight: 700; font-size: 16px; }
+  .dbrow { display: flex; justify-content: center; margin-top: 14px; }
+  .dbnode {
+    border: 2px solid #3b82f6; border-radius: 10px; background: #eef4ff;
+    padding: 8px 22px; text-align: center;
+  }
+
+  /* sequence flow */
+  .seq { counter-reset: step; margin: 16px 0; }
+  .step {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 18px; margin: 10px 0;
+  }
+  .step .no {
+    counter-increment: step;
+    flex: 0 0 34px; height: 34px; border-radius: 50%;
+    background: var(--orange); color: #fff; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step .no::before { content: counter(step); }
+  .step .body { flex: 1; }
+  .step .who { font-size: 12.5px; color: var(--muted); margin-bottom: 2px; }
+  .step .what { font-weight: 600; }
+
+  .checklist { list-style: none; padding: 0; margin: 12px 0; }
+  .checklist li {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 16px 10px 42px; margin: 8px 0; position: relative;
+  }
+  .checklist li::before {
+    content: "✔"; position: absolute; left: 14px; top: 9px;
+    color: var(--green); font-weight: 700;
+  }
+
+  footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+  @media (max-width: 760px) {
+    .arch { grid-template-columns: 1fr; }
+    nav.toc ol { columns: 1; }
+  }
+  @media print {
+    body { background: #fff; }
+    header.hero { background: #20242e; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    pre { white-space: pre-wrap; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>Gofive Exams <span class="x">×</span> Empeo — Integration Guide</h1>
+    <p>คู่มือสถาปัตยกรรมและการเชื่อมต่อระบบแบบทดสอบ (English Proficiency Test + MBTI Assessment)
+       สำหรับทีม Empeo ในฐานะ Parent System</p>
+    <div class="meta-chips">
+      <span class="chip">Version 1.0</span>
+      <span class="chip">June 2026</span>
+      <span class="chip">REST API · JSON</span>
+      <span class="chip">Auth: X-API-Key</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <strong>สารบัญ</strong>
+  <ol>
+    <li><a href="#overview">ระบบนี้คืออะไร</a></li>
+    <li><a href="#architecture">สถาปัตยกรรม</a></li>
+    <li><a href="#concepts">แนวคิดหลัก 3 ข้อ</a></li>
+    <li><a href="#flow">Flow การทำงานหลัก</a></li>
+    <li><a href="#api-english">API Reference — English Engine</a></li>
+    <li><a href="#api-mbti">API Reference — MBTI Engine</a></li>
+    <li><a href="#webhook">Webhook — การรับผลสอบ (สำคัญที่สุด)</a></li>
+    <li><a href="#fallback">ช่องทางสำรอง (Pull / Redeliver)</a></li>
+    <li><a href="#viewlink">View Link — หน้าผลสอบสำหรับ HR</a></li>
+    <li><a href="#ttl">สรุปอายุ Token / TTL ทั้งหมด</a></li>
+    <li><a href="#checklist">Checklist ฝั่ง Empeo</a></li>
+    <li><a href="#env">Environments &amp; เอกสารเพิ่มเติม</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ -->
+<section id="overview">
+  <h2>1. ระบบนี้คืออะไร</h2>
+  <div class="card">
+    <p><strong>Gofive Exams</strong> คือระบบแบบทดสอบสำหรับพนักงาน/ผู้สมัครงาน ประกอบด้วย 2 engine ใน deployment เดียว:</p>
+    <table>
+      <tr><th style="width:170px">Engine</th><th>คืออะไร</th><th style="width:220px">ผลลัพธ์ที่ได้</th></tr>
+      <tr>
+        <td><strong>English</strong></td>
+        <td>ข้อสอบวัดระดับภาษาอังกฤษสไตล์ TOEIC (Listening + Reading, 7 พาร์ท) มีตัวจับเวลา</td>
+        <td>คะแนนดิบ + ระดับ CEFR (A1–C2) + breakdown รายทักษะ/รายพาร์ท</td>
+      </tr>
+      <tr>
+        <td><strong>MBTI</strong></td>
+        <td>แบบประเมินบุคลิกภาพในบริบทการทำงาน (scenario-based 14 ข้อ)</td>
+        <td>MBTI code (เช่น ISTJ) + เปอร์เซ็นต์รายแกน + ระดับความมั่นใจ</td>
+      </tr>
+    </table>
+    <p>Empeo เชื่อมต่อผ่าน <strong>REST API ฝั่ง server ↔ server เท่านั้น</strong> —
+       Empeo ไม่ต้องยุ่งกับหน้าเว็บข้อสอบเลย หน้าเว็บเป็นที่ที่พนักงานนั่งทำข้อสอบ
+       ส่วนข้อมูล (สั่งเปิดสอบ / รับผล) วิ่งระหว่าง backend ทั้งสองฝั่ง</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="architecture">
+  <h2>2. สถาปัตยกรรม</h2>
+  <p>ทั้งระบบ deploy เป็น <strong>container เดียว</strong> มี gateway ทำ path-routing ไปยังสอง engine
+     และใช้ SQL Server database ร่วมกัน:</p>
+
+  <div class="arch">
+    <div class="col">
+      <div class="node orange">
+        <div class="t">Empeo Server</div>
+        <div class="d">backend ของ Empeo<br>(ผู้เรียก API + ผู้รับ webhook)</div>
+      </div>
+      <div class="node">
+        <div class="t">พนักงาน (Browser)</div>
+        <div class="d">เปิด launch_url ทำข้อสอบ</div>
+      </div>
+    </div>
+    <div class="arrows">
+      <div class="arrow-line">REST API + <code>X-API-Key</code> <span class="ar">⟶</span></div>
+      <div class="arrow-line"><span class="ar">⟵</span> Webhook (ผลสอบ + ลายเซ็น)</div>
+      <div class="arrow-line">เปิดหน้าเว็บข้อสอบ <span class="ar">⟶</span></div>
+    </div>
+    <div class="col">
+      <div class="gatewaybox">
+        <div class="gtitle">Gofive Exams — 1 Container (Gateway :3000)</div>
+        <div class="route"><code>/english/*</code> → English Engine (API + หน้าเว็บข้อสอบ)</div>
+        <div class="route"><code>/mbti/*</code> → MBTI Engine (API + หน้าเว็บแบบประเมิน)</div>
+        <div class="route"><code>/api/health</code> → Combined health check</div>
+        <div class="dbrow">
+          <div class="dbnode">
+            <div class="t">Azure SQL Server</div>
+            <div class="d small">database เดียว ใช้ร่วมทั้งสอง engine</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <strong>จุดที่ต้องเข้าใจก่อนอ่านต่อ:</strong>
+    คำตอบและผลสอบทั้งหมดถูกเก็บใน database ของระบบข้อสอบ —
+    Empeo <em>ไม่ได้ดึงข้อมูลจากหน้าเว็บ</em> แต่ได้รับผลผ่าน
+    <strong>webhook ที่ระบบข้อสอบยิงไปหา Empeo เอง</strong> (push)
+    หรือเรียก API มาถามทีหลัง (pull) — ดูหัวข้อ 7 และ 8
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="concepts">
+  <h2>3. แนวคิดหลัก 3 ข้อ</h2>
+
+  <h3>3.1 Authentication — key เดียวใช้ทั้งสอง engine</h3>
+  <div class="card">
+    <p>ทุก endpoint ฝั่ง parent ใช้ header เดียวกัน:</p>
+    <pre><span class="k">X-API-Key</span>: <span class="s">&lt;PARENT_API_KEY&gt;</span>   <span class="c">// ได้รับจากทีม Gofive แยกตาม environment</span></pre>
+    <ul>
+      <li>key เดียวใช้ได้ทั้ง English และ MBTI engine (MBTI ยังรับ header เก่า <code>X-Service-Key</code> ได้ด้วย แต่แนะนำให้ใช้ <code>X-API-Key</code>)</li>
+      <li>key เดียวกันนี้ใช้เป็น secret สำหรับ <strong>verify ลายเซ็น webhook</strong> ด้วย (หัวข้อ 7)</li>
+    </ul>
+    <div class="callout warn">
+      <strong>ห้ามเด็ดขาด:</strong> ห้ามนำ key ไปไว้ใน browser / mobile app / โค้ด frontend ใด ๆ
+      — key ต้องอยู่ฝั่ง server ของ Empeo เท่านั้น
+    </div>
+  </div>
+
+  <h3>3.2 Identity — ระบุตัวพนักงานด้วยคู่ (source_system, external_user_id)</h3>
+  <div class="card">
+    <p>ระบบข้อสอบไม่รู้จัก user ของ Empeo — มันจดจำคนจากคู่ค่านี้ที่ Empeo ส่งมาตอนสร้างการสอบ:</p>
+    <table>
+      <tr><th>Field</th><th>ค่าที่ Empeo ควรส่ง</th></tr>
+      <tr><td><code>source_system</code> / <code>sourceSystem</code></td><td><code>"empeo"</code> (ค่าคงที่)</td></tr>
+      <tr><td><code>external_user_id</code> / <code>externalUserId</code></td><td>Employee ID ในระบบ Empeo เช่น <code>"emp-001"</code></td></tr>
+    </table>
+    <p><strong>ต้องส่งค่าเดิมเสมอ</strong> สำหรับพนักงานคนเดียวกัน ทั้งตอนสอบ English และ MBTI —
+       ระบบจะรวมประวัติทุกการสอบของคน ๆ นั้นไว้ด้วยกัน และ Empeo สามารถดึงประวัติย้อนหลังด้วยคู่ค่านี้ได้
+       (<code>email</code> / <code>display_name</code> เป็น optional ใช้แสดงผลเฉย ๆ)</p>
+  </div>
+
+  <h3>3.3 Naming convention ของสอง engine ไม่เหมือนกัน</h3>
+  <div class="card">
+    <p>สอง engine พัฒนาแยกกัน รูปแบบชื่อ field จึงต่างกัน — โปรดระวังตอน parse:</p>
+    <table>
+      <tr><th></th><th>English Engine</th><th>MBTI Engine</th></tr>
+      <tr><td>รูปแบบชื่อ field</td><td><code>snake_case</code></td><td><code>camelCase</code></td></tr>
+      <tr><td>Base path</td><td><code>/english/api/...</code></td><td><code>/mbti/api/v1/...</code></td></tr>
+      <tr><td>Status ตอนสอบเสร็จ</td><td><code>"submitted"</code></td><td><code>"completed"</code></td></tr>
+      <tr><td>Field เวลาเสร็จ</td><td><code>submitted_at</code></td><td><code>completedAt</code></td></tr>
+      <tr><td>ID ใน webhook body</td><td><code>attempt_id</code></td><td><code>attemptId</code></td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="flow">
+  <h2>4. Flow การทำงานหลัก</h2>
+  <p>วงจรชีวิตของการสอบหนึ่งครั้ง มี 3 ขั้น — Empeo เขียนโค้ดแค่ขั้น 1 กับ 3:</p>
+
+  <div class="seq">
+    <div class="step">
+      <div class="no"></div>
+      <div class="body">
+        <div class="who">Empeo Server → Exam Server</div>
+        <div class="what">สร้างการสอบ (Create Session / Attempt)</div>
+        <p class="small">HR กดสั่งสอบใน Empeo → backend ของ Empeo เรียก
+        <code>POST /english/api/sessions</code> หรือ <code>POST /mbti/api/v1/assessment-attempts</code>
+        พร้อมแนบ employee id และ <code>callback_url</code> (ที่อยู่รับผล) →
+        ได้ <strong>attempt id + ลิงก์ทำข้อสอบ (launch URL)</strong> กลับมา</p>
+        <div class="callout small" style="margin:8px 0 0">
+          <strong>สำคัญ:</strong> Empeo ต้องบันทึก <code>attempt id</code> ผูกกับพนักงานลง DB ทันที
+          — webhook ในขั้น 3 จะอ้างอิงด้วย id นี้
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="no"></div>
+      <div class="body">
+        <div class="who">พนักงาน (Browser) → Exam Server</div>
+        <div class="what">พนักงานทำข้อสอบ</div>
+        <p class="small">Empeo ส่งลิงก์ให้พนักงาน (อีเมล / ปุ่มในระบบ) → พนักงานเปิดลิงก์ ทำข้อสอบจนจบ
+        → ระบบข้อสอบตรวจคะแนนและเก็บผลใน database ของตัวเอง
+        — <strong>ขั้นนี้ Empeo ไม่ต้องทำอะไรเลย</strong></p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="no"></div>
+      <div class="body">
+        <div class="who">Exam Server → Empeo Server</div>
+        <div class="what">ระบบข้อสอบยิงผลกลับมาให้เอง (Webhook)</div>
+        <p class="small">ทันทีที่สอบเสร็จ ระบบจะ <code>POST</code> ผลสอบ (JSON) ไปที่
+        <code>callback_url</code> ที่ Empeo บอกไว้ในขั้น 1 พร้อมลายเซ็น HMAC ให้ตรวจสอบ
+        → Empeo ตรวจลายเซ็น → บันทึกผลลง DB → ตอบ <code>200</code></p>
+      </div>
+    </div>
+  </div>
+
+  <p class="muted small">ถ้า webhook ส่งไม่ถึง (เช่น Empeo server ล่มชั่วคราว) ระบบ retry ให้สูงสุด 5 ครั้ง
+     และยังมีช่องทาง pull / redeliver เป็นแผนสำรอง — ดูหัวข้อ 8</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="api-english">
+  <h2>5. API Reference — English Engine</h2>
+  <p>Base path: <code>&lt;BASE_URL&gt;/english/api</code> · ทุก endpoint ด้านล่างต้องแนบ <code>X-API-Key</code>
+     · Swagger ฉบับเต็ม: <code>&lt;BASE_URL&gt;/english/api/docs</code></p>
+
+  <div class="endpoint">
+    <div class="ep-head">
+      <span class="badge post">POST</span>
+      <code class="path">/english/api/sessions</code>
+      <span class="tag auth">X-API-Key</span>
+      <span class="tag">สร้างการสอบ + ขอลิงก์ทำข้อสอบ</span>
+    </div>
+    <div class="ep-body">
+      <h3 style="margin-top:10px">Request</h3>
+<pre>{
+  <span class="k">"paper_id"</span>: <span class="s">"41bf2991-bc9e-453b-bb33-53e11b4a99f7"</span>,   <span class="c">// ชุดข้อสอบ (required — ทีม Gofive แจ้งค่าให้)</span>
+  <span class="k">"source_system"</span>: <span class="s">"empeo"</span>,                              <span class="c">// optional แต่ควรส่งเสมอ</span>
+  <span class="k">"external_user_id"</span>: <span class="s">"emp-001"</span>,                         <span class="c">// employee id ของ Empeo</span>
+  <span class="k">"email"</span>: <span class="s">"somchai@company.co.th"</span>,                     <span class="c">// optional</span>
+  <span class="k">"display_name"</span>: <span class="s">"สมชาย ใจดี"</span>,                          <span class="c">// optional</span>
+  <span class="k">"callback_url"</span>: <span class="s">"https://empeo.example.com/api/webhooks/exam-results"</span>,  <span class="c">// ที่อยู่รับผล (แนะนำให้ส่ง)</span>
+  <span class="k">"time_limit_min"</span>: <span class="n">60</span>                                   <span class="c">// optional — default ตามชุดข้อสอบ (60 นาที)</span>
+}</pre>
+      <h3>Response <code>201</code></h3>
+<pre>{
+  <span class="k">"attempt"</span>: {
+    <span class="k">"id"</span>: <span class="hl">"36930888-b8c8-48f6-9400-ca05d0c59a6f"</span>,      <span class="c">// ★ attempt id — Empeo ต้องเก็บค่านี้</span>
+    <span class="k">"paper_id"</span>: <span class="s">"41bf2991-..."</span>,
+    <span class="k">"source_system"</span>: <span class="s">"empeo"</span>,
+    <span class="k">"external_user_id"</span>: <span class="s">"emp-001"</span>,
+    <span class="k">"status"</span>: <span class="s">"pending"</span>,
+    <span class="k">"time_limit_min"</span>: <span class="n">60</span>,
+    <span class="k">"expires_at"</span>: <span class="s">"2026-06-03T11:30:00.000Z"</span>
+  },
+  <span class="k">"launch_token"</span>: <span class="s">"&lt;single-use token&gt;"</span>,                 <span class="c">// ใช้ได้ครั้งเดียว หมดอายุใน 30 นาที</span>
+  <span class="k">"launch_token_expires_at"</span>: <span class="s">"2026-06-03T11:00:00.000Z"</span>,
+  <span class="k">"launch_url"</span>: <span class="hl">"&lt;BASE_URL&gt;/english/exam?t=..."</span>          <span class="c">// ★ ส่งลิงก์นี้ให้พนักงานเปิด</span>
+}</pre>
+      <p class="small muted">Errors: <code>400 {"error":"paper_id is required"}</code> ·
+        <code>401</code> key ผิด/ไม่ส่ง · <code>404</code> ไม่พบ paper</p>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-head">
+      <span class="badge get">GET</span>
+      <code class="path">/english/api/subjects/{source_system}/{external_user_id}/results</code>
+      <span class="tag auth">X-API-Key</span>
+      <span class="tag">ประวัติผลสอบของพนักงานหนึ่งคน</span>
+    </div>
+    <div class="ep-body">
+      <p class="small">เช่น <code>GET /english/api/subjects/empeo/emp-001/results</code> —
+      คืน <code>{"results": [attempt, ...]}</code> เฉพาะที่ส่งข้อสอบแล้ว เรียงใหม่→เก่า
+      (attempt แต่ละตัวมี <code>correct_total</code>, <code>cefr_level</code>, <code>result</code> ครบ)</p>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-head">
+      <span class="badge post">POST</span>
+      <code class="path">/english/api/attempts/{id}/view-link</code>
+      <span class="tag auth">X-API-Key</span>
+      <span class="tag">ขอลิงก์หน้าผลสอบ (อายุ 15 นาที)</span>
+    </div>
+    <div class="ep-body">
+<pre><span class="c">// body ว่าง → Response 201:</span>
+{
+  <span class="k">"attempt_id"</span>: <span class="s">"36930888-..."</span>,
+  <span class="k">"view_url"</span>: <span class="s">"&lt;BASE_URL&gt;/english/result?vt=..."</span>,   <span class="c">// เปิดดูผลแบบอ่านอย่างเดียว</span>
+  <span class="k">"expires_at"</span>: <span class="s">"2026-06-03T11:15:00.000Z"</span>
+}</pre>
+      <p class="small muted"><code>404</code> ถ้า attempt ยังไม่ถูก submit ·
+      มีเวอร์ชันขอจาก attempt ล่าสุดของพนักงานโดยตรง:
+      <code>POST /english/api/subjects/{source_system}/{external_user_id}/view-link</code></p>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-head">
+      <span class="badge get">GET</span>
+      <code class="path">/english/api/attempts?limit=50</code>
+      <span class="tag auth">X-API-Key</span>
+      <span class="tag">รายการ attempt ล่าสุดทั้งหมด</span>
+    </div>
+    <div class="ep-body">
+      <p class="small"><code>limit</code> default 50, สูงสุด 200 — ใช้ทำ dashboard / batch ตรวจสอบ</p>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-head">
+      <span class="badge post">POST</span>
+      <code class="path">/english/api/attempts/{id}/redeliver</code>
+      <span class="tag auth">X-API-Key</span>
+      <span class="tag">สั่งยิง webhook ผลสอบซ้ำ</span>
+    </div>
+    <div class="ep-body">
+      <p class="small">body ว่าง → คืน <code>{"delivered": true|false}</code> —
+      ใช้เมื่อ Empeo พลาด webhook รอบแรก (เช่น endpoint ล่มตอนนั้น)</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="api-mbti">
+  <h2>6. API Reference — MBTI Engine</h2>
+  <p>Base path: <code>&lt;BASE_URL&gt;/mbti/api/v1</code> · ใช้ <code>X-API-Key</code> ตัวเดียวกับ English
+     · Swagger ฉบับเต็ม: <code>&lt;BASE_URL&gt;/mbti/api/docs</code></p>
+
+  <div class="endpoint">
+    <div class="ep-head">
+      <span class="badge post">POST</span>
+      <code class="path">/mbti/api/v1/assessment-attempts</code>
+      <span class="tag auth">X-API-Key</span>
+      <span class="tag">สร้างแบบประเมิน + ขอลิงก์</span>
+    </div>
+    <div class="ep-body">
+      <h3 style="margin-top:10px">Request</h3>
+<pre>{
+  <span class="k">"sourceSystem"</span>: <span class="s">"empeo"</span>,                               <span class="c">// required</span>
+  <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,                           <span class="c">// required — id เดียวกับที่ใช้ฝั่ง English</span>
+  <span class="k">"email"</span>: <span class="s">"somchai@company.co.th"</span>,                     <span class="c">// optional</span>
+  <span class="k">"displayName"</span>: <span class="s">"สมชาย ใจดี"</span>,                           <span class="c">// optional</span>
+  <span class="k">"callbackUrl"</span>: <span class="s">"https://empeo.example.com/api/webhooks/exam-results"</span>  <span class="c">// ที่อยู่รับผล</span>
+}</pre>
+      <h3>Response <code>201</code></h3>
+<pre>{
+  <span class="k">"id"</span>: <span class="hl">"3c9f04ae-39dc-4e22-9bb1-c1224d7e9222"</span>,          <span class="c">// ★ attempt id — Empeo ต้องเก็บค่านี้</span>
+  <span class="k">"attemptToken"</span>: <span class="s">"&lt;single-use token&gt;"</span>,
+  <span class="k">"userId"</span>: <span class="s">"emp-001"</span>,
+  <span class="k">"subjectId"</span>: <span class="s">"a7b3..."</span>,
+  <span class="k">"status"</span>: <span class="s">"started"</span>,
+  <span class="k">"expiresAt"</span>: <span class="s">"2026-06-03T13:00:00.000Z"</span>,              <span class="c">// attempt มีอายุ 120 นาที</span>
+  <span class="k">"testUrl"</span>: <span class="hl">"&lt;BASE_URL&gt;/mbti?attempt_id=...&amp;attempt_token=..."</span>  <span class="c">// ★ ส่งลิงก์นี้ให้พนักงาน</span>
+}</pre>
+      <p class="small muted">Errors: <code>400 {"error":"sourceSystem and externalUserId are required."}</code> ·
+      <code>401</code> key ผิด/ไม่ส่ง</p>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-head">
+      <span class="badge get">GET</span>
+      <code class="path">/mbti/api/v1/subjects/{sourceSystem}/{externalUserId}/results</code>
+      <span class="tag auth">X-API-Key</span>
+      <span class="tag">ประวัติผลของพนักงานหนึ่งคน</span>
+    </div>
+    <div class="ep-body">
+      <p class="small">เช่น <code>GET /mbti/api/v1/subjects/empeo/emp-001/results</code> —
+      คืน <code>{"results": [...]}</code> เรียงใหม่→เก่า แต่ละรายการมี <code>result</code> เต็ม
+      (code, axes, bars, confidence, ...)</p>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-head">
+      <span class="badge post">POST</span>
+      <code class="path">/mbti/api/v1/assessment-attempts/{attemptId}/view-link</code>
+      <span class="tag auth">X-API-Key</span>
+      <span class="tag">ขอลิงก์หน้าผล (อายุ 15 นาที)</span>
+    </div>
+    <div class="ep-body">
+<pre><span class="c">// body ว่าง → Response 201:</span>
+{
+  <span class="k">"attemptId"</span>: <span class="s">"3c9f04ae-..."</span>,
+  <span class="k">"viewUrl"</span>: <span class="s">"&lt;BASE_URL&gt;/mbti?view_token=..."</span>,
+  <span class="k">"expiresAt"</span>: <span class="s">"2026-06-03T11:15:00.000Z"</span>
+}</pre>
+      <p class="small muted"><code>404</code> ถ้ายังทำไม่เสร็จ · เวอร์ชัน attempt ล่าสุดของพนักงาน:
+      <code>POST /mbti/api/v1/subjects/{sourceSystem}/{externalUserId}/view-link</code></p>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-head">
+      <span class="badge post">POST</span>
+      <code class="path">/mbti/api/v1/assessment-attempts/{attemptId}/redeliver</code>
+      <span class="tag auth">X-API-Key</span>
+      <span class="tag">สั่งยิง webhook ซ้ำ</span>
+    </div>
+    <div class="ep-body">
+      <p class="small">body ว่าง → คืน <code>{"delivered": true|false}</code></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="webhook">
+  <h2>7. Webhook — การรับผลสอบ (สำคัญที่สุด)</h2>
+  <p><strong>นี่คือสิ่งเดียวที่ Empeo ต้อง "สร้างใหม่":</strong> HTTP endpoint 1 ตัว (หรือ 2 ตัวแยกตามชนิดข้อสอบ)
+     ไว้รอรับผล เมื่อพนักงานสอบเสร็จ ระบบข้อสอบจะ <code>POST</code> มาที่
+     <code>callback_url</code> / <code>callbackUrl</code> ที่ Empeo แนบไว้ตอนสร้างการสอบ</p>
+
+  <h3>7.1 Headers ที่ส่งมาด้วยทุกครั้ง</h3>
+<pre><span class="k">POST</span> &lt;callback_url ของ Empeo&gt;
+<span class="k">Content-Type</span>: application/json
+<span class="k">X-Signature</span>: sha256=&lt;HMAC-SHA256(raw body, PARENT_API_KEY) เป็น hex ตัวพิมพ์เล็ก&gt;
+<span class="k">X-Attempt-Id</span>: &lt;attempt id&gt;</pre>
+
+  <h3>7.2 Payload — English (ส่งเมื่อ status เป็น <code>submitted</code>)</h3>
+<pre>{
+  <span class="k">"attempt_id"</span>: <span class="s">"36930888-b8c8-48f6-9400-ca05d0c59a6f"</span>,
+  <span class="k">"paper_id"</span>: <span class="s">"41bf2991-..."</span>,
+  <span class="k">"subject_id"</span>: <span class="s">"c1a2..."</span>,
+  <span class="k">"source_system"</span>: <span class="s">"empeo"</span>,
+  <span class="k">"external_user_id"</span>: <span class="s">"emp-001"</span>,
+  <span class="k">"status"</span>: <span class="s">"submitted"</span>,
+  <span class="k">"submitted_at"</span>: <span class="s">"2026-06-03T10:15:00.000Z"</span>,
+  <span class="k">"correct_total"</span>: <span class="n">72</span>,          <span class="c">// ★ คะแนนรวม</span>
+  <span class="k">"max_total"</span>: <span class="n">100</span>,            <span class="c">// ★ คะแนนเต็ม</span>
+  <span class="k">"cefr_level"</span>: <span class="s">"B2"</span>,          <span class="c">// ★ ระดับ CEFR</span>
+  <span class="k">"cefr_label"</span>: <span class="s">"Upper-Intermediate"</span>,
+  <span class="k">"result"</span>: {
+    <span class="k">"parts"</span>: [                  <span class="c">// breakdown รายพาร์ท (7 พาร์ท)</span>
+      { <span class="k">"id"</span>: <span class="n">1</span>, <span class="k">"title"</span>: <span class="s">"Photographs"</span>, <span class="k">"section"</span>: <span class="s">"Listening"</span>, <span class="k">"correct"</span>: <span class="n">5</span>, <span class="k">"total"</span>: <span class="n">6</span> },
+      <span class="c">// ... พาร์ท 2-7 ...</span>
+    ],
+    <span class="k">"skills"</span>: {                 <span class="c">// breakdown รายทักษะ</span>
+      <span class="k">"listening"</span>:  { <span class="k">"correct"</span>: <span class="n">40</span>, <span class="k">"total"</span>: <span class="n">50</span> },
+      <span class="k">"vocabulary"</span>: { <span class="k">"correct"</span>: <span class="n">10</span>, <span class="k">"total"</span>: <span class="n">15</span> },
+      <span class="k">"grammar"</span>:    { <span class="k">"correct"</span>: <span class="n">8</span>,  <span class="k">"total"</span>: <span class="n">15</span> },
+      <span class="k">"reading"</span>:    { <span class="k">"correct"</span>: <span class="n">14</span>, <span class="k">"total"</span>: <span class="n">20</span> },
+      <span class="k">"total"</span>:      { <span class="k">"correct"</span>: <span class="n">72</span>, <span class="k">"total"</span>: <span class="n">100</span> }
+    }
+  }
+}</pre>
+  <p class="small muted">แนะนำให้ map <code>correct_total</code> / <code>max_total</code> /
+     <code>cefr_level</code> / <code>cefr_label</code> เป็นคอลัมน์ ส่วน <code>result</code>
+     เก็บทั้งก้อนเป็น JSON ไว้แสดง breakdown</p>
+
+  <h3>7.3 Payload — MBTI (ส่งเมื่อ status เป็น <code>completed</code>)</h3>
+<pre>{
+  <span class="k">"attemptId"</span>: <span class="s">"3c9f04ae-39dc-4e22-9bb1-c1224d7e9222"</span>,
+  <span class="k">"subjectId"</span>: <span class="s">"a7b3..."</span>,
+  <span class="k">"sourceSystem"</span>: <span class="s">"empeo"</span>,
+  <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,
+  <span class="k">"status"</span>: <span class="s">"completed"</span>,
+  <span class="k">"completedAt"</span>: <span class="s">"2026-06-03T10:20:00.000Z"</span>,
+  <span class="k">"result"</span>: {
+    <span class="k">"code"</span>: <span class="s">"ISTJ"</span>,             <span class="c">// ★ MBTI code</span>
+    <span class="k">"softCode"</span>: <span class="s">"I · S · T · J"</span>, <span class="c">// แกนที่ก้ำกึ่งจะแสดงเป็น เช่น "E/I"</span>
+    <span class="k">"axes"</span>: {                   <span class="c">// รายละเอียดรายแกน EI / SN / TF / JP</span>
+      <span class="k">"EI"</span>: { <span class="k">"winner"</span>: <span class="s">"I"</span>, <span class="k">"leftPercent"</span>: <span class="n">35</span>, <span class="k">"rightPercent"</span>: <span class="n">65</span>,
+              <span class="k">"dominantPercent"</span>: <span class="n">65</span>, <span class="k">"confidence"</span>: <span class="s">"clear"</span>, <span class="k">"isMidzone"</span>: <span class="hl">false</span> }
+      <span class="c">// "SN", "TF", "JP" โครงเดียวกัน</span>
+    },
+    <span class="k">"bars"</span>:       { <span class="k">"EI"</span>: <span class="n">35</span>, <span class="k">"SN"</span>: <span class="n">60</span>, <span class="k">"TF"</span>: <span class="n">70</span>, <span class="k">"JP"</span>: <span class="n">75</span>, <span class="k">"ES"</span>: <span class="n">35</span> },  <span class="c">// ES เป็น alias ของ EI — ไม่ต้องใช้</span>
+    <span class="k">"confidence"</span>: { <span class="k">"EI"</span>: <span class="s">"clear"</span>, <span class="k">"SN"</span>: <span class="s">"slight"</span>, <span class="k">"TF"</span>: <span class="s">"clear"</span>, <span class="k">"JP"</span>: <span class="s">"veryClear"</span> },
+    <span class="k">"midzones"</span>:   [],           <span class="c">// แกนที่ชี้ขาดไม่ได้ เช่น ["EI"]</span>
+    <span class="k">"facets"</span>:     { <span class="k">"deepFocus"</span>: <span class="n">1.8</span>, <span class="k">"concrete"</span>: <span class="n">2.4</span> }  <span class="c">// มิติเสริม</span>
+  },
+  <span class="k">"engineVersion"</span>: <span class="s">"1.0"</span>
+}</pre>
+  <p class="small muted"><code>confidence</code> มี 4 ระดับ: <code>midzone</code> (&lt;55%) →
+     <code>slight</code> → <code>clear</code> → <code>veryClear</code> (80%+) ·
+     คำตอบรายข้อ (raw responses) <strong>ไม่ส่งใน webhook</strong> โดยตั้งใจ ·
+     แนะนำให้ map <code>result.code</code> เป็นคอลัมน์ ที่เหลือเก็บ JSON</p>
+
+  <h3>7.4 กติกา 3 ข้อที่ endpoint ฝั่ง Empeo ต้องทำ</h3>
+
+  <div class="card">
+    <p><strong>① Verify ลายเซ็นก่อนเชื่อข้อมูล</strong> — คำนวณ HMAC-SHA256 จาก
+       <strong>raw body ก่อน parse JSON</strong> ด้วย <code>PARENT_API_KEY</code>
+       แล้วเทียบกับ header <code>X-Signature</code> แบบ timing-safe:</p>
+<pre><span class="c">// C# / .NET</span>
+[HttpPost(<span class="s">"api/webhooks/exam-results"</span>)]
+public async Task&lt;IActionResult&gt; Receive()
+{
+    using var reader = new StreamReader(Request.Body);
+    var rawBody = await reader.ReadToEndAsync();              <span class="c">// ← raw body ก่อน parse</span>
+
+    var key = Encoding.UTF8.GetBytes(_config[<span class="s">"ParentApiKey"</span>]);
+    using var hmac = new HMACSHA256(key);
+    var expected = <span class="s">"sha256="</span> + Convert.ToHexString(
+        hmac.ComputeHash(Encoding.UTF8.GetBytes(rawBody))).ToLowerInvariant();
+
+    var received = Request.Headers[<span class="s">"X-Signature"</span>].ToString();
+    if (!CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(received)))
+        return Unauthorized();
+
+    var payload = JsonSerializer.Deserialize&lt;JsonElement&gt;(rawBody);
+    <span class="c">// ② upsert ลง DB ด้วย attempt id ... ③ ตอบเร็ว</span>
+    return Ok();
+}</pre>
+<pre><span class="c">// Node.js / Express (เผื่อใช้ทดสอบ)</span>
+app.post(<span class="s">'/api/webhooks/exam-results'</span>,
+  express.raw({ type: <span class="s">'application/json'</span> }),       <span class="c">// ← ต้องได้ raw body</span>
+  (req, res) =&gt; {
+    const expected = <span class="s">'sha256='</span> + crypto.createHmac(<span class="s">'sha256'</span>, PARENT_API_KEY)
+                                       .update(req.body).digest(<span class="s">'hex'</span>);
+    const ok = crypto.timingSafeEqual(Buffer.from(expected),
+                                      Buffer.from(req.headers[<span class="s">'x-signature'</span>] || <span class="s">''</span>));
+    if (!ok) return res.status(<span class="n">401</span>).end();
+    const payload = JSON.parse(req.body);
+    <span class="c">// upsert แล้วตอบ</span>
+    res.status(<span class="n">200</span>).end();
+  });</pre>
+
+    <p><strong>② Upsert ด้วย attempt id — ห้าม insert ทื่อ ๆ</strong><br>
+       <span class="small">ระบบ retry สูงสุด <strong>5 ครั้ง</strong> ถ้าไม่ได้รับ 2xx ⇒
+       Empeo อาจได้รับ payload เดิมซ้ำ endpoint จึงต้อง <strong>idempotent</strong>:
+       มี record ของ attempt id นี้แล้วก็อัปเดตทับ ไม่สร้างแถวใหม่</span></p>
+
+    <p><strong>③ ตอบ 2xx ให้เร็ว</strong><br>
+       <span class="small">ฝั่งผู้ส่งมี timeout <strong>8 วินาที</strong> —
+       บันทึกลง DB แล้วตอบ <code>200</code> ทันที งานหนัก (แจ้งเตือน, คำนวณต่อ)
+       ให้แยกไปทำ background</span></p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="fallback">
+  <h2>8. ช่องทางสำรอง (Pull / Redeliver)</h2>
+  <p>กรณี webhook ส่งไม่ถึง (Empeo ล่มเกิน 5 retry, network ขัดข้อง) — ผลสอบ
+     <strong>ไม่หายไปไหน</strong> ยังอยู่ใน database ของระบบข้อสอบ Empeo มาเอาทีหลังได้ 2 วิธี:</p>
+  <table>
+    <tr><th style="width:120px">วิธี</th><th>Endpoint</th><th>เหมาะกับ</th></tr>
+    <tr>
+      <td><strong>Pull</strong></td>
+      <td><code>GET /english/api/subjects/empeo/{empId}/results</code><br>
+          <code>GET /mbti/api/v1/subjects/empeo/{empId}/results</code></td>
+      <td>ดึงผลมาเก็บเองโดยตรง</td>
+    </tr>
+    <tr>
+      <td><strong>Redeliver</strong></td>
+      <td><code>POST /english/api/attempts/{id}/redeliver</code><br>
+          <code>POST /mbti/api/v1/assessment-attempts/{id}/redeliver</code></td>
+      <td>สั่งให้ยิง webhook เดิมมาใหม่ (เข้า flow ปกติ)</td>
+    </tr>
+  </table>
+  <div class="callout">
+    <strong>แนะนำ:</strong> ทำ batch job ฝั่ง Empeo (เช่น ทุก 30 นาที) เช็คว่ามี attempt ไหน
+    สร้างไว้นานแล้วแต่ยังไม่มีผลใน DB ของ Empeo → เรียก pull หรือ redeliver เก็บตก
+    — ได้ความครบถ้วน 100% โดย webhook ยังเป็นทางหลักที่เร็วที่สุด
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="viewlink">
+  <h2>9. View Link — หน้าผลสอบสำหรับ HR</h2>
+  <p>ถ้าต้องการให้ HR กดดูผลสอบแบบหน้าเว็บสวย ๆ (ไม่ใช่ JSON) ทั้งสอง engine มีหน้า
+     "ดูผลอย่างเดียว" ให้ โดยเข้าผ่านลิงก์ชั่วคราวอายุ <strong>15 นาที</strong>:</p>
+  <div class="seq">
+    <div class="step">
+      <div class="no"></div>
+      <div class="body"><div class="what">HR กดปุ่ม "ดูผลสอบ" ใน Empeo</div></div>
+    </div>
+    <div class="step">
+      <div class="no"></div>
+      <div class="body">
+        <div class="what">Backend ของ Empeo เรียก view-link endpoint สด ๆ ตอนนั้น</div>
+        <p class="small"><code>POST .../attempts/{id}/view-link</code> (ใช้ attempt id ที่เก็บไว้)
+        → ได้ <code>view_url</code> / <code>viewUrl</code> กลับมา</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="no"></div>
+      <div class="body"><div class="what">Redirect / เปิด URL นั้นให้ HR — หมดอายุเองใน 15 นาที</div></div>
+    </div>
+  </div>
+  <div class="callout warn">
+    <strong>อย่าเก็บ view URL ลง database</strong> — มันหมดอายุใน 15 นาที
+    สิ่งที่ควรเก็บถาวรคือ <code>attempt id</code> แล้ว mint ลิงก์ใหม่ทุกครั้งที่จะดู
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="ttl">
+  <h2>10. สรุปอายุ Token / TTL ทั้งหมด</h2>
+  <table>
+    <tr><th>สิ่งของ</th><th>อายุ (default)</th><th>หมายเหตุ</th></tr>
+    <tr>
+      <td>English — <code>launch_token</code> / <code>launch_url</code></td>
+      <td><strong>30 นาที</strong></td>
+      <td>ใช้ได้ครั้งเดียว พนักงานต้องเปิดลิงก์ก่อนหมดอายุ (เปิดแล้วเวลาสอบนับแยก)</td>
+    </tr>
+    <tr>
+      <td>English — เวลาทำข้อสอบ</td>
+      <td><strong>60 นาที</strong></td>
+      <td>กำหนดเองได้ผ่าน <code>time_limit_min</code> ตอนสร้าง session</td>
+    </tr>
+    <tr>
+      <td>MBTI — attempt ทั้งอัน (<code>testUrl</code>)</td>
+      <td><strong>120 นาที</strong></td>
+      <td>ต้องเปิดและทำให้เสร็จภายในเวลานี้</td>
+    </tr>
+    <tr>
+      <td>View link (ทั้งสอง engine)</td>
+      <td><strong>15 นาที</strong></td>
+      <td>mint ใหม่ได้เรื่อย ๆ ไม่จำกัดจำนวนครั้ง</td>
+    </tr>
+    <tr>
+      <td>Webhook retry</td>
+      <td>สูงสุด <strong>5 ครั้ง</strong> · timeout 8 วินาที/ครั้ง</td>
+      <td>พลาดครบ 5 ครั้ง → ใช้ pull หรือ redeliver (หัวข้อ 8)</td>
+    </tr>
+  </table>
+  <p class="small muted">หมดอายุแล้วเปิดลิงก์ → ได้ <code>401</code> พร้อมข้อความบอกว่า token
+     invalid/expired — สร้างการสอบใหม่หรือ mint ลิงก์ใหม่ได้เสมอ</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="checklist">
+  <h2>11. Checklist ฝั่ง Empeo</h2>
+  <ul class="checklist">
+    <li><strong>เก็บ mapping ใน DB:</strong> ตาราง/คอลัมน์เก็บ <code>attempt_id</code>
+        ผูกกับ employee + ชนิดข้อสอบ ตั้งแต่ตอนสร้าง session
+        และคอลัมน์ผลสอบ (English: คะแนน + CEFR · MBTI: code) + JSON เต็ม</li>
+    <li><strong>Webhook endpoint 1 ตัว:</strong> รับ POST → verify <code>X-Signature</code>
+        (HMAC จาก raw body) → upsert by attempt id → ตอบ <code>200</code> เร็ว
+        (โค้ดตัวอย่างหัวข้อ 7.4)</li>
+    <li><strong>เก็บ <code>PARENT_API_KEY</code> ฝั่ง server เท่านั้น</strong>
+        (config/secret store) — ใช้ทั้งยิง API และ verify ลายเซ็น ห้ามอยู่ใน frontend</li>
+    <li><strong>(แนะนำ) Batch เก็บตก:</strong> job ตรวจ attempt ที่ค้างนาน
+        แล้ว pull/redeliver — กันผลตกหล่น 100%</li>
+  </ul>
+  <p class="small muted">ฝั่ง Gofive จะแจ้งให้: Base URL ของแต่ละ environment ·
+     <code>PARENT_API_KEY</code> ของแต่ละ environment (ส่งผ่านช่องทางปลอดภัย) ·
+     <code>paper_id</code> ของชุดข้อสอบ English ที่ใช้งาน</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="env">
+  <h2>12. Environments &amp; เอกสารเพิ่มเติม</h2>
+  <table>
+    <tr><th>Environment</th><th>Base URL</th><th>หมายเหตุ</th></tr>
+    <tr><td>DEV</td><td><code>https://exam-dev.gofive.co.th</code> <span class="muted small">(ตัวอย่าง — URL จริงจะแจ้งอีกครั้ง)</span></td><td>ทดสอบ integration</td></tr>
+    <tr><td>UAT</td><td><span class="muted">จะแจ้งภายหลัง</span></td><td></td></tr>
+    <tr><td>PROD</td><td><span class="muted">จะแจ้งภายหลัง</span></td><td>key คนละตัวกับ DEV/UAT</td></tr>
+  </table>
+
+  <h3>ลิงก์ในระบบ (ต่อท้าย Base URL)</h3>
+  <table>
+    <tr><th>อะไร</th><th>Path</th></tr>
+    <tr><td>Swagger — English</td><td><code>/english/api/docs</code></td></tr>
+    <tr><td>Swagger — MBTI</td><td><code>/mbti/api/docs</code></td></tr>
+    <tr><td>Health check รวม</td><td><code>/api/health</code> → <code>{"status":"ok","engines":{"english":"ok","mbti":"ok"}}</code></td></tr>
+    <tr><td>หน้า landing (ลองกดเล่นได้)</td><td><code>/</code></td></tr>
+  </table>
+
+  <h3>เครื่องมือช่วยทดสอบ</h3>
+  <p>มี <strong>Postman collection</strong> ครอบคลุมทุก endpoint ในเอกสารนี้ (ตัวแปร
+     <code>{{base}}</code> + <code>{{parent_api_key}}</code>) พร้อม
+     <strong>webhook listener ตัวอย่าง</strong> ที่ verify ลายเซ็นให้ดูเป็นโค้ดจริง —
+     ขอได้จากทีม Gofive (โฟลเดอร์ <code>mock-parent/</code>)</p>
+
+  <footer>
+    เอกสารนี้สร้างจากโค้ดจริงของระบบ ณ มิถุนายน 2026 — สนามจริงยึดตาม Swagger ของ environment นั้น ๆ เป็นหลัก<br>
+    คำถามเพิ่มเติม: ติดต่อทีม Gofive Exams
+  </footer>
+</section>
+
+</div>
+</body>
+</html>
