@@ -58,8 +58,9 @@ apps) is a no-op, so standalone behaviour is unchanged.
   `https://exam.gofive.co.th`); each engine derives its own URL from it
   (`<base>/english`, `<base>/mbti`) when minting `launchUrl` / view links.
   Per-engine `ENGINE_PUBLIC_URL` / `FRONTEND_URL` remain as overrides.
-- Postman collection + webhook listener: `mock-parent/` at the repo root
-  (uses `{{base}}` = the gateway origin) — see `mock-parent/README.md`.
+- Postman collection: `postman-api-for-parent/` at the repo root
+  (uses `{{base}}` = the gateway origin). Webhook-receiver reference code
+  lives in `empeo-integration.html` section 7.4.
 
 ## Database
 
