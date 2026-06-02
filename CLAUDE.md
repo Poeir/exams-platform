@@ -51,7 +51,7 @@ One database (`gofive_assessments` local / `examo_*` on Azure), one `DATABASE_UR
 - **Unified camelCase contract**: every parent-facing field on BOTH engines is camelCase (`attemptId`, `externalUserId`, `callbackUrl`, `launchUrl`, `viewUrl`, `completedAt`, ...), terminal status on the wire is `completed`, webhooks share one envelope (+ `engineVersion`), view links use `?view_token=`. english is snake_case *internally* (DB + candidate/admin endpoints) and maps at the parent boundary via `toParentAttempt()` / `parentStatus()` in `apps/english/server/src/routes/attempts.js` — don't leak snake_case into parent responses. The empeo-facing doc is `empeo-integration.html` at the repo root; keep it in sync with contract changes.
 - english endpoints: `<host>/english/api/...`; mbti: `<host>/mbti/api/v1/...`. Swagger at `/english/api/docs` and `/mbti/api/docs`.
 - `PUBLIC_BASE_URL` = the gateway origin browsers see; each engine derives its own public URL (`<base>/english`, `<base>/mbti`) when minting `launchUrl` / view links. Per-engine `ENGINE_PUBLIC_URL` / `FRONTEND_URL` are overrides.
-- Postman collection + webhook listener live in `mock-parent/` at the repo root (moved in from the old sibling folder). Keep the collection in sync with contract changes — its Get Papers script classifies the full vs short english paper by name (same rule as `paperVariant()`).
+- Postman collection lives in `postman-api-for-parent/` at the repo root (renamed from `mock-parent/`; the mock webhook listener was dropped). Keep the collection in sync with contract changes — its Get Papers script classifies the full vs short english paper by name (same rule as `paperVariant()`).
 
 ## Environment & deploy
 
