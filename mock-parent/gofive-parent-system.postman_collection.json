@@ -1,0 +1,324 @@
+{
+  "info": {
+    "name": "Gofive Parent System (mock empeo)",
+    "description": "เล่นบทระบบแม่ยิงเข้า gofive-exams (container เดียว :3000)\n\n- english อยู่ใต้ {{base}}/english\n- mbti อยู่ใต้ {{base}}/mbti\n- ใช้ X-API-Key เดียวกันทั้งสอง engine ({{parent_api_key}})\n- ทุก field ฝั่ง parent เป็น camelCase และ status ตอนจบคือ completed — เหมือนกันทั้งสอง engine\n- ข้อสอบ English มี 2 ชุด: ชุดเต็ม (Listening+Reading, 50 ข้อ) และชุดสั้น 15 นาที (20 ข้อ) — คนละ paperId, เกณฑ์ระดับคนละตาราง\n\nลำดับการยิง:\n1. English / Get Papers  → เซฟ paper_id_full + paper_id_short อัตโนมัติ\n2. English / Create Session (เลือกข้อ 2 ชุดเต็ม หรือ 2.1 ชุดสั้น) → ได้ launchUrl เปิดให้ผู้สอบ\n3. MBTI / Create Attempt → ได้ launchUrl เปิดให้ผู้สอบ\n4. (ผู้สอบทำข้อสอบในเบราว์เซอร์)\n5. English / Get Attempt → ดูสถานะ/ผล\n6. MBTI / Subject Results → ระบบแม่ดึงผล MBTI\n\nWebhook ของทั้งสองรับใน Postman ไม่ได้ (Postman เป็นฝั่งยิงอย่างเดียว) — ใช้ webhook-listener.mjs ที่รันไว้ที่ :4000 หรือ webhook.site",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base", "value": "http://localhost:3000" },
+    { "key": "parent_api_key", "value": "dev-parent-key" },
+    { "key": "source_system", "value": "empeo" },
+    { "key": "external_user_id", "value": "emp-001" },
+    { "key": "callback_url", "value": "http://localhost:4000/callback" },
+    { "key": "paper_id_full", "value": "" },
+    { "key": "paper_id_short", "value": "" },
+    { "key": "en_attempt_id", "value": "" },
+    { "key": "en_launch_token", "value": "" },
+    { "key": "mb_attempt_id", "value": "" },
+    { "key": "mb_attempt_token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. English — Get Papers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// แยกชุดเต็ม/ชุดสั้นจากชื่อ paper — กติกาเดียวกับ paperVariant() ฝั่ง server:",
+              "// ชื่อที่มีคำว่า 'short' หรือ 'สั้น' = ชุดสั้น 15 นาที ที่เหลือ = ชุดเต็ม",
+              "const papers = pm.response.json();",
+              "const isShort = (p) => /\\bshort\\b/i.test(p.name) || p.name.includes('สั้น');",
+              "const full = papers.find((p) => !isShort(p));",
+              "const short = papers.find(isShort);",
+              "papers.forEach((p) => console.log(`${isShort(p) ? '[short]' : '[full] '} ${p.id}  ${p.name}  (${p.time_limit_min} นาที)`));",
+              "if (full) pm.collectionVariables.set('paper_id_full', full.id);",
+              "if (short) pm.collectionVariables.set('paper_id_short', short.id);",
+              "pm.test('found full paper', () => pm.expect(full).to.not.be.undefined);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{base}}/english/api/papers"
+      },
+      "description": "เซฟ paper_id_full + paper_id_short ให้อัตโนมัติ — ดูรายการทั้งหมดใน Console"
+    },
+    {
+      "name": "2. English — Create Session (ชุดเต็ม 50 นาที)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const r = pm.response.json();",
+              "pm.collectionVariables.set('en_attempt_id', r.attempt.id);",
+              "pm.collectionVariables.set('en_launch_token', r.launchToken);",
+              "console.log('LAUNCH URL =', r.launchUrl);",
+              "pm.test('201 created', () => pm.response.to.have.status(201));",
+              "pm.test('has subjectId', () => pm.expect(r.attempt.subjectId).to.be.a('string'));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-API-Key", "value": "{{parent_api_key}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paperId\": \"{{paper_id_full}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"sourceSystem\": \"{{source_system}}\",\n  \"email\": \"{{external_user_id}}@gofive.co.th\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\"\n}"
+        },
+        "url": "{{base}}/english/api/sessions"
+      },
+      "description": "เปิดสอบชุดเต็ม (Listening + Reading, 50 ข้อ) — ต้องรัน 1. Get Papers ก่อนเพื่อให้ paper_id_full ถูกเซฟ"
+    },
+    {
+      "name": "2.1 English — Create Session (ชุดสั้น 15 นาที)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const r = pm.response.json();",
+              "pm.collectionVariables.set('en_attempt_id', r.attempt.id);",
+              "pm.collectionVariables.set('en_launch_token', r.launchToken);",
+              "console.log('LAUNCH URL =', r.launchUrl);",
+              "pm.test('201 created', () => pm.response.to.have.status(201));",
+              "pm.test('time limit is 15 min', () => pm.expect(r.attempt.timeLimitMin).to.eql(15));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-API-Key", "value": "{{parent_api_key}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paperId\": \"{{paper_id_short}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"sourceSystem\": \"{{source_system}}\",\n  \"email\": \"{{external_user_id}}@gofive.co.th\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\"\n}"
+        },
+        "url": "{{base}}/english/api/sessions"
+      },
+      "description": "เปิดสอบชุดสั้น (Quick Placement, 20 ข้อ / 15 นาที) — API เดียวกับชุดเต็ม ต่างแค่ paperId · ผลที่ได้ maxTotal = 20 และระดับใช้เกณฑ์ 3 ระดับ (Beginner / Intermediate / Advanced)"
+    },
+    {
+      "name": "3. MBTI — Create Attempt (parent)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const r = pm.response.json();",
+              "pm.collectionVariables.set('mb_attempt_id', r.id);",
+              "pm.collectionVariables.set('mb_attempt_token', r.attemptToken);",
+              "const base = pm.collectionVariables.get('base');",
+              "console.log('LAUNCH URL →', `${base}/mbti/?attempt_id=${r.id}&attempt_token=${r.attemptToken}`);",
+              "pm.test('201 created', () => pm.response.to.have.status(201));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-API-Key", "value": "{{parent_api_key}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourceSystem\": \"{{source_system}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"email\": \"{{external_user_id}}@gofive.co.th\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\"\n}"
+        },
+        "url": "{{base}}/mbti/api/v1/assessment-attempts"
+      },
+      "description": "callbackUrl ใส่ได้เหมือนฝั่ง english — ทำเสร็จเมื่อไหร่ webhook จะเด้งไปที่ listener (key เดียวกันทั้งสอง engine แล้ว)"
+    },
+    {
+      "name": "4. English — Get Attempt status/result",
+      "request": {
+        "method": "GET",
+        "url": "{{base}}/english/api/attempts/{{en_attempt_id}}"
+      }
+    },
+    {
+      "name": "5. MBTI — Subject Results (parent pulls)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-API-Key", "value": "{{parent_api_key}}" }
+        ],
+        "url": "{{base}}/mbti/api/v1/subjects/{{source_system}}/{{external_user_id}}/results"
+      }
+    },
+    {
+      "name": "5.0 English — Subject Results (parent pulls)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-API-Key", "value": "{{parent_api_key}}" }
+        ],
+        "url": "{{base}}/english/api/subjects/{{source_system}}/{{external_user_id}}/results"
+      },
+      "description": "ประวัติผลสอบอังกฤษทั้งหมดของคนนี้ (เฉพาะ completed, ใหม่สุดก่อน) — โครง response แบบเดียวกับข้อ 5 ฝั่ง MBTI (camelCase)"
+    },
+    {
+      "name": "5.1 English — View Link (เปิดผลใน new tab)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const r = pm.response.json();",
+              "console.log('VIEW URL →', r.viewUrl, '(หมดอายุ', r.expiresAt + ')');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-API-Key", "value": "{{parent_api_key}}" }
+        ],
+        "url": "{{base}}/english/api/attempts/{{en_attempt_id}}/view-link"
+      },
+      "description": "เว็บแม่ขอลิงก์ดูผลอายุสั้น (15 นาที) แล้วเปิด viewUrl ใน new tab — หน้า read-only ไม่มีเฉลย ใช้ได้เฉพาะ attempt ที่ completed แล้ว (โครง response เหมือนฝั่ง MBTI ทุก field)"
+    },
+    {
+      "name": "5.2 MBTI — View Link (เปิดผลใน new tab)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const r = pm.response.json();",
+              "console.log('VIEW URL →', r.viewUrl, '(หมดอายุ', r.expiresAt + ')');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-API-Key", "value": "{{parent_api_key}}" }
+        ],
+        "url": "{{base}}/mbti/api/v1/assessment-attempts/{{mb_attempt_id}}/view-link"
+      },
+      "description": "เว็บแม่ขอลิงก์ดูผลอายุสั้น (15 นาที) แล้วเปิด viewUrl ใน new tab — เข้าหน้า result เต็มโดยไม่ต้องมี attempt token ใช้ได้เฉพาะ attempt ที่ completed แล้ว"
+    },
+    {
+      "name": "5.3 English — View Link ผลล่าสุดจากรหัสพนักงาน",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const r = pm.response.json();",
+              "console.log('VIEW URL (latest) →', r.viewUrl, '(ของ attempt', r.attemptId + ')');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-API-Key", "value": "{{parent_api_key}}" }
+        ],
+        "url": "{{base}}/english/api/subjects/{{source_system}}/{{external_user_id}}/view-link"
+      },
+      "description": "ไม่ต้องรู้ attempt id เลย — ใช้แค่รหัสพนักงาน ระบบหยิบผล completed ล่าสุดให้เอง (สมมาตรกับ 5.4 ฝั่ง MBTI)"
+    },
+    {
+      "name": "5.4 MBTI — View Link ผลล่าสุดจากรหัสพนักงาน",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const r = pm.response.json();",
+              "console.log('VIEW URL (latest) →', r.viewUrl, '(ของ attempt', r.attemptId + ')');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-API-Key", "value": "{{parent_api_key}}" }
+        ],
+        "url": "{{base}}/mbti/api/v1/subjects/{{source_system}}/{{external_user_id}}/view-link"
+      },
+      "description": "ไม่ต้องรู้ attempt id เลย — ใช้แค่รหัสพนักงาน ระบบหยิบผล completed ล่าสุดให้เอง"
+    },
+    {
+      "name": "6. English — Redeliver webhook (ถ้า listener พลาด)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-API-Key", "value": "{{parent_api_key}}" }
+        ],
+        "url": "{{base}}/english/api/attempts/{{en_attempt_id}}/redeliver"
+      }
+    },
+    {
+      "name": "6.1 MBTI — Redeliver webhook (ถ้า listener พลาด)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-API-Key", "value": "{{parent_api_key}}" }
+        ],
+        "url": "{{base}}/mbti/api/v1/assessment-attempts/{{mb_attempt_id}}/redeliver"
+      },
+      "description": "สั่งยิงผล MBTI ซ้ำไปที่ callbackUrl เดิม — สมมาตรกับข้อ 6 ฝั่ง english"
+    },
+    {
+      "name": "(จำลองผู้สอบ) English — Consume token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('status →', pm.response.json().attempt?.status);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"{{en_launch_token}}\"\n}"
+        },
+        "url": "{{base}}/english/api/attempts/consume"
+      },
+      "description": "ปกติ frontend เป็นคนยิงตอนผู้สอบเปิด launchUrl — ยิงเองได้ถ้าอยากจำลอง (token ใช้ได้ครั้งเดียว ใช้แล้วเปิด launchUrl ซ้ำไม่ได้)"
+    },
+    {
+      "name": "(จำลองผู้สอบ) English — Submit (คำตอบว่าง)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"answers\": {}\n}"
+        },
+        "url": "{{base}}/english/api/attempts/{{en_attempt_id}}/submit"
+      },
+      "description": "ส่งคำตอบว่าง = ได้ 0 คะแนน แต่ webhook จะยิงไป callbackUrl ทันที (payload camelCase, status completed) — ใช้เทส loop ฝั่งแม่โดยไม่ต้องนั่งทำข้อสอบ"
+    }
+  ]
+}

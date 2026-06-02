@@ -56,10 +56,10 @@ apps) is a no-op, so standalone behaviour is unchanged.
   `/english/api/docs` and `/mbti/api/docs`.
 - `PUBLIC_BASE_URL` = the gateway origin browsers see (e.g.
   `https://exam.gofive.co.th`); each engine derives its own URL from it
-  (`<base>/english`, `<base>/mbti`) when minting `launch_url` / view links.
+  (`<base>/english`, `<base>/mbti`) when minting `launchUrl` / view links.
   Per-engine `ENGINE_PUBLIC_URL` / `FRONTEND_URL` remain as overrides.
-- Postman collection + webhook listener: `../mock-parent/` (uses `{{base}}` =
-  the gateway origin).
+- Postman collection + webhook listener: `mock-parent/` at the repo root
+  (uses `{{base}}` = the gateway origin) — see `mock-parent/README.md`.
 
 ## Database
 
