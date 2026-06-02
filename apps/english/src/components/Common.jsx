@@ -1,4 +1,5 @@
 import React from 'react';
+import { withBase } from '../lib/base.js';
 
 export const ETIcon = {
   clock: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>,
@@ -30,7 +31,7 @@ export const ETIcon = {
 export function ETBrand({ subLabel, showName = true }) {
   return (
     <div className="et-topbar__brand">
-      <img src="/logo.png" alt="empeo" className="et-topbar__brand-mark" />
+      <img src={withBase('/logo.png')} alt="empeo" className="et-topbar__brand-mark" />
       {showName && (
         <div className="et-topbar__brand-name">
           <span className="et-pipe">|</span>
