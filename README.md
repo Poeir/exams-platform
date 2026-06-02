@@ -54,9 +54,10 @@ apps) is a no-op, so standalone behaviour is unchanged.
 - english endpoints live under `<host>/english/api/...`,
   mbti under `<host>/mbti/api/v1/...` — see each app's Swagger at
   `/english/api/docs` and `/mbti/api/docs`.
-- `ENGINE_PUBLIC_URL` / `FRONTEND_URL` must include the prefix
-  (e.g. `https://exam.gofive.co.th/english`) — they are used to mint
-  `launch_url` / view links handed to the parent site.
+- `PUBLIC_BASE_URL` = the gateway origin browsers see (e.g.
+  `https://exam.gofive.co.th`); each engine derives its own URL from it
+  (`<base>/english`, `<base>/mbti`) when minting `launch_url` / view links.
+  Per-engine `ENGINE_PUBLIC_URL` / `FRONTEND_URL` remain as overrides.
 - Postman collection + webhook listener: `../mock-parent/` (uses `{{base}}` =
   the gateway origin).
 
@@ -75,8 +76,9 @@ Shared DB (`gofive_assessments` local / `examo_*` on Azure):
 
 - Service port `3000`, Dockerfile `Dockerfile`, working dir `.`,
   health checks `/api/health`.
-- Env: `DATABASE_URL`, `PARENT_API_KEY`, `VIEW_LINK_SECRET` (secrets);
-  `ENGINE_PUBLIC_URL`, `FRONTEND_URL` (public URLs incl. prefix); english
-  extras `ADMIN_USERNAME`/`ADMIN_PASSWORD` (secret), `CLOUDINARY_*`.
+- Required env: `DATABASE_URL` (secret), `PARENT_API_KEY` (secret),
+  `PUBLIC_BASE_URL`. Recommended in prod: `VIEW_LINK_SECRET` (secret).
+  Optional (english admin): `ADMIN_USERNAME`/`ADMIN_PASSWORD` (secret),
+  `CLOUDINARY_*` — unset means the admin UI is disabled.
 - `papers_export_1_full.json` is gitignored (answer keys) — seeding happens
   out-of-band from a machine that has it.

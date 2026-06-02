@@ -19,7 +19,12 @@ export const config = {
   port: Number(process.env.PORT || 3001),
   databaseUrl: process.env.DATABASE_URL
     || 'sqlserver://localhost:1433;database=gofive_assessments;user=sa;password=Your_password123;encrypt=true;trustServerCertificate=true',
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5174',
+  // Public URL of THIS engine as seen by browsers, used to mint view links.
+  // Resolution order: explicit FRONTEND_URL → gateway-wide PUBLIC_BASE_URL +
+  // /mbti (the mount prefix) → standalone-dev Vite origin.
+  frontendUrl: process.env.FRONTEND_URL
+    || (process.env.PUBLIC_BASE_URL && `${process.env.PUBLIC_BASE_URL.replace(/\/$/, '')}/mbti`)
+    || 'http://localhost:5174',
   parentApiKey,
   attemptTtlMinutes: Number(process.env.ATTEMPT_TTL_MINUTES || 120),
   // Result view links handed to the parent site (see security.js). The secret

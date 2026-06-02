@@ -15,7 +15,14 @@ const router = Router();
 
 const ttlMin = () => Number(process.env.LAUNCH_TOKEN_TTL_MIN) || 30;
 const defaultLimit = () => Number(process.env.DEFAULT_TIME_LIMIT_MIN) || 60;
-const enginePublicUrl = () => (process.env.ENGINE_PUBLIC_URL || 'http://localhost:5175').replace(/\/$/, '');
+// Public URL of THIS engine as seen by browsers, used to mint launch/view
+// links. Resolution order: explicit ENGINE_PUBLIC_URL → gateway-wide
+// PUBLIC_BASE_URL + /english (the mount prefix) → standalone-dev Vite origin.
+const enginePublicUrl = () => (
+  process.env.ENGINE_PUBLIC_URL
+  || (process.env.PUBLIC_BASE_URL && `${process.env.PUBLIC_BASE_URL.replace(/\/$/, '')}/english`)
+  || 'http://localhost:5175'
+).replace(/\/$/, '');
 
 function rowToAttempt(row) {
   return {

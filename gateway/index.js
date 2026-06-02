@@ -9,13 +9,37 @@
 // resolves imports relative to each app's files, so the two dependency trees
 // coexist in one process. Apps export `app` from app.js and never listen here.
 import express from 'express';
-import { app as englishApp } from '../apps/english/server/src/app.js';
-import { prisma as englishPrisma } from '../apps/english/server/src/db.js';
-import { app as mbtiApp } from '../apps/mbti/server/app.js';
-import { prisma as mbtiPrisma } from '../apps/mbti/server/db.js';
-import { logger } from '../apps/mbti/server/logger.js';
 
+// Resolve the gateway port BEFORE importing the apps: importing them inits
+// each Prisma client, which side-loads the app's own .env (schema-relative —
+// e.g. apps/english/server/.env with the standalone-dev PORT=3002) into
+// process.env. Static imports are hoisted above this line, so the apps are
+// loaded dynamically below instead.
 const PORT = Number(process.env.PORT) || 3000;
+
+// Same reason: pin the engines' public URLs from PUBLIC_BASE_URL before the
+// apps' side-loaded .env files (standalone-dev values like localhost:5175)
+// can fill them in. Explicit ENGINE_PUBLIC_URL / FRONTEND_URL in the GATEWAY
+// env still wins.
+if (process.env.PUBLIC_BASE_URL) {
+  const base = process.env.PUBLIC_BASE_URL.replace(/\/$/, '');
+  process.env.ENGINE_PUBLIC_URL ||= `${base}/english`;
+  process.env.FRONTEND_URL ||= `${base}/mbti`;
+}
+
+const [
+  { app: englishApp },
+  { prisma: englishPrisma },
+  { app: mbtiApp },
+  { prisma: mbtiPrisma },
+  { logger },
+] = await Promise.all([
+  import('../apps/english/server/src/app.js'),
+  import('../apps/english/server/src/db.js'),
+  import('../apps/mbti/server/app.js'),
+  import('../apps/mbti/server/db.js'),
+  import('../apps/mbti/server/logger.js'),
+]);
 
 const gateway = express();
 gateway.disable('x-powered-by');
