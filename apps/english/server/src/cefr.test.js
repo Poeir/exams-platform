@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { levelFor } from './cefr.js';
 
 describe('levelFor (full, 50 items)', () => {
-  it('maps 0 → L1 Beginner', () => {
-    expect(levelFor(0)).toMatchObject({ level: 1, label: 'Beginner' });
+  it('maps 0 → L1 Novice', () => {
+    expect(levelFor(0)).toMatchObject({ level: 1, label: 'Novice' });
   });
   it('maps boundary 15 → L1, 16 → L2', () => {
     expect(levelFor(15).level).toBe(1);
@@ -22,7 +22,7 @@ describe('levelFor (full, 50 items)', () => {
     expect(levelFor(42).level).toBe(5);
   });
   it('caps at L5 for max score', () => {
-    expect(levelFor(50)).toMatchObject({ level: 5, label: 'Advanced' });
+    expect(levelFor(50)).toMatchObject({ level: 5, label: 'Expert' });
   });
   it('falls back to L1 for non-numeric / null', () => {
     expect(levelFor(null).level).toBe(1);

@@ -345,7 +345,7 @@
   <h3>3.1 Authentication — key เดียวใช้ทั้งสอง engine</h3>
   <div class="card">
     <p>ทุก endpoint ฝั่ง parent ใช้ header เดียวกัน:</p>
-    <pre><span class="k">X-API-Key</span>: <span class="s">&lt;PARENT_API_KEY&gt;</span>   <span class="c">// ได้รับจากทีม Gofive แยกตาม environment</span></pre>
+    <pre><span class="k">X-API-Key</span>: <span class="s">&lt;PARENT_API_KEY&gt;</span>   <span class="c">// แยกตาม environment — ขอจากภูริ</span></pre>
     <ul>
       <li>key เดียวใช้ได้ทั้ง English และ MBTI engine</li>
       <li>key เดียวกันนี้ใช้เป็น secret สำหรับ <strong>verify ลายเซ็น webhook</strong> ด้วย (หัวข้อ 7)</li>
@@ -453,7 +453,7 @@
     <div class="ep-body">
       <h3 style="margin-top:10px">Request</h3>
 <pre>{
-  <span class="k">"paperId"</span>: <span class="s">"41bf2991-bc9e-453b-bb33-53e11b4a99f7"</span>,    <span class="c">// ชุดข้อสอบ (required) — มี 2 ชุด: เต็ม 50 นาที / สั้น 15 นาที ทีม Gofive แจ้ง id ของแต่ละชุดให้</span>
+  <span class="k">"paperId"</span>: <span class="s">"41bf2991-bc9e-453b-bb33-53e11b4a99f7"</span>,    <span class="c">// ชุดข้อสอบ (required) — มี 2 ชุด: เต็ม 50 นาที / สั้น 15 นาที · id ของแต่ละชุด ถามภูริ</span>
   <span class="k">"sourceSystem"</span>: <span class="s">"empeo"</span>,                               <span class="c">// optional แต่ควรส่งเสมอ</span>
   <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,                           <span class="c">// employee id ของ Empeo</span>
   <span class="k">"email"</span>: <span class="s">"somchai@company.co.th"</span>,                     <span class="c">// optional</span>
@@ -466,16 +466,21 @@
   <span class="k">"attempt"</span>: {
     <span class="k">"id"</span>: <span class="hl">"36930888-b8c8-48f6-9400-ca05d0c59a6f"</span>,      <span class="c">// ★ attempt id — Empeo ต้องเก็บค่านี้</span>
     <span class="k">"paperId"</span>: <span class="s">"41bf2991-..."</span>,
+    <span class="k">"subjectId"</span>: <span class="s">"c1a2..."</span>,
     <span class="k">"sourceSystem"</span>: <span class="s">"empeo"</span>,
     <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,
     <span class="k">"status"</span>: <span class="s">"pending"</span>,
-    <span class="k">"timeLimitMin"</span>: <span class="n">60</span>,
-    <span class="k">"expiresAt"</span>: <span class="s">"2026-06-03T11:30:00.000Z"</span>
+    <span class="k">"timeLimitMin"</span>: <span class="n">50</span>,
+    <span class="k">"expiresAt"</span>: <span class="hl">null</span>                                   <span class="c">// ยังเป็น null ตอนนี้ — จะถูกตั้งเมื่อพนักงานเปิดลิงก์ทำข้อสอบ (เวลาสอบเริ่มนับ) · ตอนนี้ให้ดู launchTokenExpiresAt แทน</span>
   },
   <span class="k">"launchToken"</span>: <span class="s">"&lt;single-use token&gt;"</span>,                  <span class="c">// ใช้ได้ครั้งเดียว หมดอายุใน 30 นาที</span>
   <span class="k">"launchTokenExpiresAt"</span>: <span class="s">"2026-06-03T11:00:00.000Z"</span>,
   <span class="k">"launchUrl"</span>: <span class="hl">"&lt;BASE_URL&gt;/english/exam?t=..."</span>           <span class="c">// ★ ส่งลิงก์นี้ให้พนักงานเปิด</span>
 }</pre>
+      <p class="small muted">object <code>attempt</code> ยังมี field คะแนนติดมาด้วย
+        (<code>correctTotal</code>, <code>maxTotal</code>, <code>cefrLevel</code>, <code>cefrLabel</code>,
+        <code>result</code>, <code>startedAt</code>, <code>completedAt</code>) — ตอนนี้เป็น <code>null</code> ทั้งหมด
+        จะมีค่าเมื่อสอบเสร็จ ไม่ต้องสนใจตอนสร้าง session</p>
       <p class="small muted">Errors: <code>400 {"error":"paperId is required"}</code> ·
         <code>401</code> key ผิด/ไม่ส่ง · <code>404</code> ไม่พบ paper</p>
     </div>
@@ -652,7 +657,7 @@
   <span class="k">"correctTotal"</span>: <span class="n">38</span>,           <span class="c">// ★ คะแนนรวม (ดิบ)</span>
   <span class="k">"maxTotal"</span>: <span class="n">50</span>,              <span class="c">// ★ คะแนนเต็ม (ชุดเต็ม 50 / ชุดสั้น 20)</span>
   <span class="k">"cefrLevel"</span>: <span class="n">4</span>,              <span class="c">// ★ band ระดับ (ตัวเลข — ดูตารางใต้ตัวอย่าง)</span>
-  <span class="k">"cefrLabel"</span>: <span class="s">"Upper-Intermediate"</span>,
+  <span class="k">"cefrLabel"</span>: <span class="s">"Advanced"</span>,    <span class="c">// ป้ายชื่อระดับ — ตรงกับที่แสดงบนหน้าผลสอบ</span>
   <span class="k">"result"</span>: {
     <span class="k">"parts"</span>: [                  <span class="c">// คะแนนแยกรายพาร์ท (7 พาร์ท)</span>
       { <span class="k">"id"</span>: <span class="n">1</span>, <span class="k">"title"</span>: <span class="s">"Photographs"</span>, <span class="k">"section"</span>: <span class="s">"Listening"</span>, <span class="k">"correct"</span>: <span class="n">5</span>, <span class="k">"total"</span>: <span class="n">6</span> },
@@ -672,9 +677,9 @@
      <code>cefrLevel</code> / <code>cefrLabel</code> เก็บเป็นคอลัมน์ของตัวเอง ส่วน <code>result</code>
      เก็บทั้งก้อนเป็น JSON ไว้ใช้แสดงคะแนนแยกละเอียด</p>
   <p class="small muted">เกณฑ์ตัดระดับ (<code>cefrLevel</code> / <code>cefrLabel</code>) ขึ้นกับชุดข้อสอบ —
-     <strong>ชุดเต็ม 50 ข้อ</strong>: 0–15 = 1 Beginner · 16–24 = 2 Elementary · 25–33 = 3 Intermediate · 34–41 = 4 Upper-Intermediate · 42–50 = 5 Advanced ·
+     <strong>ชุดเต็ม 50 ข้อ</strong>: 0–15 = 1 Novice · 16–24 = 2 Beginner · 25–33 = 3 Intermediate · 34–41 = 4 Advanced · 42–50 = 5 Expert ·
      <strong>ชุดสั้น 20 ข้อ</strong>: 0–6 = 1 Beginner · 7–15 = 2 Intermediate · 16–20 = 3 Advanced
-     (เกณฑ์ทั้งคู่คิดจากคะแนนดิบ <code>correctTotal</code>)</p>
+     (เกณฑ์ทั้งคู่คิดจากคะแนนดิบ <code>correctTotal</code> · <code>cefrLabel</code> ตรงกับที่แสดงบนหน้าผลสอบของพนักงาน)</p>
 
   <h3>7.3 Payload — MBTI (ส่งเมื่อสอบเสร็จ — <code>status: "completed"</code>)</h3>
 <pre>{
@@ -867,7 +872,7 @@ app.post(<span class="s">'/api/webhooks/exam-results'</span>,
     <li><strong>(แนะนำ) งานเก็บตกอัตโนมัติ:</strong> ตรวจการสอบที่เปิดไว้นานแต่ยังไม่มีผล
         แล้วดึงผล (pull) หรือสั่งส่งซ้ำ (redeliver) — กันผลตกหล่น</li>
   </ul>
-  <p class="small muted">ฝั่ง Gofive จะแจ้งให้: Base URL ของแต่ละ environment ·
+  <p class="small muted">3 อย่างนี้ <strong>ถามภูริ</strong>: Base URL ของแต่ละ environment ·
      <code>PARENT_API_KEY</code> ของแต่ละ environment (ส่งผ่านช่องทางปลอดภัย) ·
      <code>paperId</code> ของชุดข้อสอบ English ที่ใช้งาน</p>
 </section>
@@ -894,13 +899,13 @@ app.post(<span class="s">'/api/webhooks/exam-results'</span>,
   <h3>เครื่องมือช่วยทดสอบ</h3>
   <p>มี <strong>Postman collection</strong> ครอบคลุมทุก endpoint ในเอกสารนี้ (ตัวแปร
      <code>{{base}}</code> + <code>{{parent_api_key}}</code>) —
-     ขอได้จากทีม Gofive (โฟลเดอร์ <code>postman-api-for-parent/</code>) ·
+     ขอได้จากภูริ (โฟลเดอร์ <code>postman-api-for-parent/</code>) ·
      โค้ดตัวอย่างฝั่งรับ webhook (ตรวจลายเซ็น) อยู่ในหัวข้อ 7.4</p>
 
   <footer>
     เอกสารนี้เขียนจากโค้ดจริงของระบบ ณ มิถุนายน 2026 —
     หากรายละเอียด field ไม่ตรงกัน ให้ยึดตาม Swagger ของ environment นั้น ๆ เป็นหลัก<br>
-    คำถามเพิ่มเติม: ติดต่อทีม Gofive Exams
+    คำถามเพิ่มเติม: ถามภูริ (ผู้ทำระบบ)
   </footer>
 </section>
 
