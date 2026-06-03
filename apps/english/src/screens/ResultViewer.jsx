@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { ETTopbar } from '../components/Common.jsx';
 import { ResultCertificate } from './Results.jsx';
 import { paperVariant } from '../data/exam.js';
 import { withBase } from '../lib/base.js';
@@ -38,8 +37,6 @@ export default function ResultViewer() {
 
   return (
     <div className="et et-screen et-screen--white">
-      <ETTopbar crumbs={[{ text: 'Result', strong: true }]} />
-
       <div className="et-results et-results--dim">
         <div className="et-results__inner">
           {state.loading && (

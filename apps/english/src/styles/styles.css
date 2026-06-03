@@ -1004,15 +1004,31 @@ body {
 .et-landing__cta { width: 100%; }
 
 /* Combined landing — version + overview merged into one screen */
-.et-landing-split { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; overflow: auto; }
+.et-landing-split { display: grid; grid-template-columns: 30% 70%; min-height: 100%; overflow: hidden; }
 .et-landing-split__left {
   background: var(--color-primary-tint);
-  padding: 72px 64px 60px;
-  display: flex; align-items: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 320px;
 }
-.et-landing-split__leftInner { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 32px; }
+.et-landing-split__img,
+.et-landing-split__imgPlaceholder { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* cover fills the pane with no empty band; the left column is sized narrow
+   (portrait-ish) to match the illustration, so cover crops very little. */
+.et-landing-split__img { object-fit: cover; object-position: center bottom; display: block; }
+.et-landing-split__imgPlaceholder {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  color: var(--color-primary);
+  font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+}
 .et-landing-split__right { padding: 72px 64px 60px; overflow: auto; background: var(--bg-app, #fff); }
-.et-landing-split__rightInner { max-width: 640px; margin: 0 auto; }
+.et-landing-split__rightInner {
+  max-width: 720px; margin: 0 auto;
+  min-height: 100%;
+  display: flex; flex-direction: column; justify-content: center; gap: 28px;
+}
+/* Two-column test structure (Listening | Reading) so the overview fits one screen. */
+.et-landing-structure { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
 
 .et-audio-check { padding: 32px 80px 24px; }
 .et-modal { width: 100%; max-width: 460px; padding: 32px; background: var(--bg-surface, #fff); box-shadow: 0 24px 60px rgba(0,0,0,0.28); }
@@ -1049,13 +1065,47 @@ body {
 .et-results { flex: 1; overflow: auto; padding: 32px 80px 48px; display: flex; justify-content: center; }
 .et-results__inner { width: 100%; max-width: 980px; }
 
-/* Certificate variant: layered brand-tinted backdrop for depth. */
+/* Certificate variant: clean single-hue backdrop — a soft warm halo behind
+   the dashboard over a white→gray wash, plus one faint tint in the bottom
+   corner (the element background doesn't scroll with content, so it stays put
+   as a fixed backdrop). The dashboard needs more width than text screens;
+   `margin: auto` on the inner centers it both ways without clipping the top
+   when content overflows. */
 .et-results--dim {
+  padding: 24px;
   background:
-    radial-gradient(105% 65% at 50% -6%, var(--color-primary-tint) 0%, rgba(255,255,255,0) 58%),
-    radial-gradient(60% 45% at 96% 4%, var(--color-primary-soft) 0%, rgba(255,255,255,0) 46%),
-    radial-gradient(55% 40% at 4% 12%, var(--color-primary-tint) 0%, rgba(255,255,255,0) 50%),
-    var(--bg-app);
+    radial-gradient(1100px 520px at 50% -14%, var(--color-primary-soft) 0%, rgba(255,255,255,0) 62%),
+    radial-gradient(720px 440px at 102% 104%, var(--color-primary-tint) 0%, rgba(255,255,255,0) 60%),
+    linear-gradient(180deg, var(--gf-white-1) 0%, var(--bg-app) 48%);
+}
+.et-results--dim .et-results__inner { max-width: 1160px; margin: auto; }
+
+/* Two-column certificate dashboard: certificate card left, panel cards right. */
+.et-cert-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  animation: et-cert-rise 0.55s cubic-bezier(0.22, 0.8, 0.36, 1) both;
+}
+@keyframes et-cert-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .et-cert-layout { animation: none; }
+}
+.et-cert-card {
+  background:
+    linear-gradient(180deg, var(--color-primary-tint) 0%, rgba(255,255,255,0) 58%),
+    #fff;
+  border: 1px solid var(--gf-cloud-3);
+  border-radius: 16px;
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.04);
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .et-results-masthead { border-bottom: 2px solid var(--fg-1); padding-bottom: 18px; margin-bottom: 24px; display: flex; align-items: flex-end; justify-content: space-between; }
 .et-results-overview { display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px; margin-bottom: 36px; align-items: center; }
@@ -1149,11 +1199,12 @@ body {
   .et-landing__hero,
   .et-landing__features { grid-template-columns: 1fr; gap: 20px; }
 
-  /* Combined landing */
+  /* Combined landing — info first, image hidden on narrow screens */
   .et-landing-split { grid-template-columns: 1fr; min-height: auto; }
-  .et-landing-split__left,
+  .et-landing-split__left { display: none; }
   .et-landing-split__right { padding: 32px 20px; }
-  .et-landing-split__leftInner { max-width: 100%; gap: 24px; }
+  .et-landing-split__rightInner { max-width: 100%; }
+  .et-landing-structure { grid-template-columns: 1fr; }
 
   /* Version select */
   .et-version-select { padding: 24px 16px 32px; }
@@ -1214,6 +1265,8 @@ body {
 
   /* Results */
   .et-results { padding: 24px 16px 32px; }
+  .et-cert-layout { grid-template-columns: 1fr; }
+  .et-cert-card { padding: 32px 16px; }
   .et-results-masthead { flex-direction: column; align-items: flex-start; gap: 14px; padding-bottom: 14px; margin-bottom: 18px; }
   .et-results-overview { grid-template-columns: 1fr; gap: 24px; }
   .et-results-score { font-size: 64px; }

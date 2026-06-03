@@ -1,25 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ETIcon, ETBtn, ETTopbar } from '../components/Common.jsx';
 import { useExam, VERSIONS } from '../state/ExamContext.jsx';
 import { partsBySection } from '../data/exam.js';
+import { withBase } from '../lib/base.js';
 
-const PART_BLURBS = {
-  1: 'Listen to a description and choose the photograph it best matches.',
-  2: 'Listen to a question and choose the most appropriate response.',
-  3: 'Listen to short conversations between 2–3 speakers and answer questions.',
-  4: 'Listen to a single-speaker announcement or talk and answer questions.',
-  5: 'Choose the word or phrase that best completes the sentence.',
-  6: 'Choose the answer that uses correct grammar and structure.',
-  7: 'Read single and paired passages and answer questions about them.',
-};
+// Hero image for the left pane. If the asset is ever missing, LandingImage
+// falls back to a placeholder so the layout stays intact.
+const LANDING_IMAGE_SRC = withBase('/landing_pic.png');
 
-// Native-structure papers (the short placement test) blurb by section skill
-// instead of by TOEIC part number.
-const SKILL_BLURBS = {
-  grammar: 'Choose the answer that uses correct grammar and structure.',
-  vocabulary: 'Choose the word or phrase that best completes the sentence.',
-  reading: 'Read a short workplace text and answer questions about it.',
-};
+function LandingImage() {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <div className="et-landing-split__imgPlaceholder">
+        <span style={{ width: 44, height: 44, display: 'inline-flex' }}>{ETIcon.photo}</span>
+        <span>Add image at public/landing_pic.png</span>
+      </div>
+    );
+  }
+  return (
+    <img
+      className="et-landing-split__img"
+      src={LANDING_IMAGE_SRC}
+      alt=""
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 function Stat({ label, value }) {
   return (
@@ -35,11 +42,11 @@ function Stat({ label, value }) {
   );
 }
 
-function PartRow({ index, heading, blurb, qs }) {
+function PartRow({ index, heading, qs }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'flex-start', gap: 14,
-      padding: '14px 18px', borderTop: '1px solid var(--gf-cloud-3)',
+      display: 'flex', alignItems: 'center', gap: 14,
+      padding: '12px 18px', borderTop: '1px solid var(--gf-cloud-3)',
     }}>
       <span style={{
         width: 26, height: 26, borderRadius: 6, flexShrink: 0,
@@ -47,18 +54,12 @@ function PartRow({ index, heading, blurb, qs }) {
         color: 'var(--fg-3)',
         fontSize: 12, fontWeight: 700,
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        marginTop: 2,
       }}>{index}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg-1)', marginBottom: 4 }}>
-          {heading}
-        </div>
-        <div style={{ fontSize: 12.5, color: 'var(--fg-3)', fontWeight: 500, lineHeight: 1.45 }}>
-          {blurb}
-        </div>
+      <div style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, color: 'var(--fg-1)' }}>
+        {heading}
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg-1)' }}>{qs} Qs</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>{qs} Qs</div>
       </div>
     </div>
   );
@@ -72,7 +73,6 @@ function SectionCard({ accent, icon, label, summary, parts, isShort = false }) {
       borderRadius: 12,
       overflow: 'hidden',
       background: 'var(--bg-surface, #fff)',
-      marginBottom: 18,
     }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
@@ -95,7 +95,6 @@ function SectionCard({ accent, icon, label, summary, parts, isShort = false }) {
           key={p.number}
           index={p.number}
           heading={isShort ? p.title : `Part ${p.number} · ${p.title}`}
-          blurb={isShort ? (SKILL_BLURBS[p.skill] || '') : (PART_BLURBS[p.number] || '')}
           qs={p.totalItems}
         />
       ))}
@@ -139,70 +138,76 @@ export default function Landing({ onExit }) {
       />
 
       <div className="et-landing-split" style={{ flex: 1, minHeight: 0 }}>
-      {/* LEFT — branding + CTA */}
+      {/* LEFT — image */}
       <div className="et-landing-split__left">
-        <div className="et-landing-split__leftInner">
+        <LandingImage />
+      </div>
+
+      {/* RIGHT — all information + test structure */}
+      <div className="et-landing-split__right">
+        <div className="et-landing-split__rightInner">
+          {/* Top — title, blurb, stats */}
           <div>
-            <h1 className="et-display" style={{ fontSize: 64, letterSpacing: '-0.025em', lineHeight: 1.02, margin: 0, marginBottom: 18 }}>
-              {isShort
-                ? <>Quick<br />Placement<br />Test.</>
-                : <>English<br />Proficiency<br />Test.</>}
+            <h1 className="et-display" style={{ fontSize: 36, letterSpacing: '-0.02em', lineHeight: 1.08, margin: 0, marginBottom: 14 }}>
+              {isShort ? 'English Proficiency Test' : 'English Proficiency Test'}
             </h1>
-            <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--fg-2)', fontWeight: 500, margin: 0, maxWidth: 440 }}>
+            <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--fg-2)', fontWeight: 500, margin: 0, marginBottom: 22, maxWidth: 520 }}>
               {isShort
                 ? 'A quick placement check of your written English — grammar and workplace reading. Take a few quiet minutes, and you\'re ready to begin.'
                 : 'A workplace assessment of your spoken and written English. Take a few quiet minutes, and you\'re ready to begin.'}
             </p>
+
+            <div style={{
+              maxWidth: 420,
+              display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18,
+            }}>
+              <Stat label="Questions" value={totalQs || '—'} />
+              <Stat label="Duration" value={`${minutes}m`} />
+            </div>
           </div>
 
-          <div style={{
-            borderTop: '1px solid rgba(0,0,0,0.10)',
-            borderBottom: '1px solid rgba(0,0,0,0.10)',
-            padding: '22px 0',
-            display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18,
-          }}>
-            <Stat label="Questions" value={totalQs || '—'} />
-            <Stat label="Duration" value={`${minutes}m`} />
+          {/* Middle — test structure (unchanged table) */}
+          <div>
+            <div style={{
+              display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+              marginBottom: 18, gap: 12,
+            }}>
+              <h2 className="et-display" style={{ fontSize: 22, letterSpacing: '-0.01em', margin: 0 }}>
+                Test structure
+              </h2>
+            </div>
+
+            {isShort ? (
+              <SectionCard
+                accent="muted"
+                icon={ETIcon.book}
+                label="Grammar & Reading"
+                summary={`${readingQs} Qs `}
+                parts={shortRows}
+                isShort
+              />
+            ) : (
+              <div className="et-landing-structure">
+                <SectionCard
+                  accent="muted"
+                  icon={ETIcon.headphones}
+                  label={`Section 1 · Listening`}
+                  summary={`${listeningQs} Qs`}
+                  parts={listeningParts}
+                />
+                <SectionCard
+                  accent="muted"
+                  icon={ETIcon.book}
+                  label={`Section 2 · Reading`}
+                  summary={`${readingQs} Qs`}
+                  parts={readingParts}
+                />
+              </div>
+            )}
           </div>
 
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <ETBtn kind="primary" size="lg" iconRight={ETIcon.arrowRight}>Start the test</ETBtn>
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT — test structure */}
-      <div className="et-landing-split__right">
-        <div className="et-landing-split__rightInner">
-          <div style={{
-            display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-            marginBottom: 22, gap: 12,
-          }}>
-            <h2 className="et-display" style={{ fontSize: 22, letterSpacing: '-0.01em', margin: 0 }}>
-              Test structure
-            </h2>
-            <span style={{ fontSize: 12, color: 'var(--fg-3)', fontWeight: 600 }}>
-              Total · {totalQs} questions
-            </span>
-          </div>
-
-          {!isShort && (
-            <SectionCard
-              accent="primary"
-              icon={ETIcon.headphones}
-              label={`Section 1 · Listening`}
-              summary={`${listeningQs} Qs · ${listeningMin || '—'} min`}
-              parts={listeningParts}
-            />
-          )}
-          <SectionCard
-            accent="muted"
-            icon={ETIcon.book}
-            label={isShort ? 'Grammar & Reading' : 'Section 2 · Reading'}
-            summary={`${readingQs} Qs · ${readingMin || '—'} min`}
-            parts={isShort ? shortRows : readingParts}
-            isShort={isShort}
-          />
+          {/* Bottom — full-width CTA */}
+          <ETBtn kind="primary" size="lg" iconRight={ETIcon.arrowRight} style={{ width: '100%', justifyContent: 'center' }}>Start the test</ETBtn>
         </div>
       </div>
       </div>
