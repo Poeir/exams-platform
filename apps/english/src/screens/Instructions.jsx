@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ETIcon, ETBtn, ETTopbar, ETAudioStatus } from '../components/Common.jsx';
 import Eyebrow from '../components/Eyebrow.jsx';
-import SampleQuestion, { SamplePlayer } from '../components/SampleQuestion.jsx';
+import SampleQuestion from '../components/SampleQuestion.jsx';
 import CountdownCircle from '../components/CountdownCircle.jsx';
 import ExamClock from '../components/ExamClock.jsx';
 import { POST_AUDIO_BUFFER_SEC, playStartBeep } from '../components/examAudio.js';
@@ -268,7 +268,6 @@ const VARIANTS = {
     icon: ETIcon.headphones,
     description:
       "Welcome to the Listening Comprehension section. In this section, you will listen to spoken English in a variety of situations and answer questions based on what you hear. Please listen carefully, as each audio clip will be played only once. Make sure your headphones or speakers are working properly and that the volume is comfortable. The Listening Comprehension test will begin now.",
-    samplePlayer: <SamplePlayer label="Example audio — 0:24" />,
     sample: {
       eyebrow: 'Sample question',
       prompt: 'Where most likely are the speakers?',
@@ -290,7 +289,6 @@ const VARIANTS = {
     icon: ETIcon.book,
     description:
       'You will read sentences, short texts, and longer passages, then answer questions about them. Reading is self-paced — manage your time so you can attempt every question before the section ends.',
-    samplePlayer: null,
     sample: {
       eyebrow: 'Sample question',
       prompt: 'The marketing team has been asked to ___ their quarterly performance report by Friday afternoon.',
@@ -336,13 +334,9 @@ function RulesPanel({ data }) {
 function ExamplePanel({ data }) {
   return (
     <div className="et-intro-pane--right">
-      <Eyebrow style={{ marginBottom: 10 }}>Example · not scored</Eyebrow>
-      <h3 className="gf-h4" style={{ marginBottom: 18 }}>This is how a question looks</h3>
-
-      {data.samplePlayer && <div style={{ marginBottom: 18 }}>{data.samplePlayer}</div>}
+      <div style={{ marginBottom: 16 }}><span className="et-chip et-chip--brand">Example</span></div>
 
       <SampleQuestion
-        eyebrow={data.sample.eyebrow}
         prompt={data.sample.prompt}
         options={data.sample.options}
       />
@@ -402,6 +396,11 @@ function Instructions({ variant = 'listening', onFlowNext, onFlowPrev, onExit })
       blocked={dir.blocked}
       remaining={dir.remaining}
     />
+  ) : variant === 'listening' ? (
+    // Match the rest of the Listening flow (EndOfListening + the question
+    // screens): the footer always carries the audio-status wave — resting when
+    // nothing is playing — instead of a bare line of text.
+    <ETAudioStatus status={data.footerCenter} active={false} />
   ) : staticFooterCenter;
 
   const footerRight = autoplayDirections ? (

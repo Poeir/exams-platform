@@ -168,6 +168,44 @@ body {
   border-color: var(--color-primary);
 }
 
+/* Sample / example question — must read as a non-interactive specimen, never a
+   live question. Dashed frame + a green (not brand-orange) "correct answer"
+   treatment keep it visually distinct from the real exam, where an orange
+   highlight means "the answer you selected". */
+.et-sample {
+  border: 1px dashed var(--gf-smoke-4);
+  border-radius: 12px;
+  background: var(--gf-soft-cloud-2);
+  padding: 22px;
+}
+.et-sample__opt {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--gf-cloud-3);
+  border-radius: 10px;
+  background: #fff;
+  cursor: default;
+}
+.et-sample__opt-bullet {
+  width: 28px; height: 28px; border-radius: 999px;
+  border: 1.5px solid var(--gf-smoke-4);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px; color: var(--fg-2); background: #fff; flex-shrink: 0;
+}
+.et-sample__opt-text {
+  flex: 1; min-width: 0; padding-top: 4px;
+  font-size: 15px; font-weight: 500; color: var(--fg-2); line-height: 1.5;
+}
+.et-sample__opt--answer { border-color: var(--gf-success); background: var(--gf-success-soft); }
+.et-sample__opt--answer .et-sample__opt-bullet {
+  background: var(--gf-success); color: #fff; border-color: var(--gf-success);
+}
+.et-sample__answer-tag {
+  display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
+  color: var(--gf-success-dark); font-size: 12px; font-weight: 700;
+}
+.et-sample__answer-tag svg { width: 14px; height: 14px; }
+
 .et-qnav { display: grid; grid-template-columns: repeat(auto-fit, minmax(34px, 1fr)); gap: 6px; width: 100%; padding: 2px; }
 .et-qnav__btn {
   width: 100%; min-width: 0; height: auto; aspect-ratio: 1 / 1;

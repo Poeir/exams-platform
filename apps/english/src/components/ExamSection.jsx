@@ -417,8 +417,7 @@ function PartIntroScreen({ part, sectionLabel, audioSrc, onStart, onExit, allowS
         </div>
 
         <div className="et-intro-pane--right">
-          <Eyebrow style={{ marginBottom: 10 }}>Example · not scored</Eyebrow>
-          <h3 className="gf-h4" style={{ marginBottom: 18 }}>This is how a question looks</h3>
+          <div style={{ marginBottom: 16 }}><span className="et-chip et-chip--brand">Example</span></div>
           {part.sample.imageUrl && (
             <div style={{ marginBottom: 18, borderRadius: 12, overflow: 'hidden', background: '#0b0b0f', aspectRatio: '16 / 9' }}>
               <img
@@ -437,7 +436,6 @@ function PartIntroScreen({ part, sectionLabel, audioSrc, onStart, onExit, allowS
               : part.sample.prompt;
             return (
               <SampleQuestion
-                eyebrow={part.sample.eyebrow}
                 prompt={samplePrompt}
                 options={part.sample.options}
                 lettersOnly={audioOnly}
@@ -449,8 +447,8 @@ function PartIntroScreen({ part, sectionLabel, audioSrc, onStart, onExit, allowS
 
       <footer className="et-footbar et-footbar--inline">
         <span aria-hidden="true" />
-        <div className="et-footbar__center" style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '0 16px', fontSize: 13, color: 'var(--fg-2)', fontWeight: 600 }}>
-          {status}
+        <div className="et-footbar__center" style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '0 16px' }}>
+          <ETAudioStatus status={status} active={phase === 'playing'} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {audioBlocked && (
