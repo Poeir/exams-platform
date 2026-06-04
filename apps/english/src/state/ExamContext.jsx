@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { buildExam, partsBySection } from '../data/exam.js';
 import { listPapers, getPaper, consumeLaunchToken, createAnonymousAttempt, saveAttemptAnswers, submitAttempt, abandonAttempt } from '../data/examRepo.js';
 import { stripBase } from '../lib/base.js';
+import { notifyParentCompleted } from '../lib/parentSignal.js';
 
 const ExamContext = createContext(null);
 
@@ -238,12 +239,31 @@ export function ExamProvider({ children }) {
   }, [exam]);
 
   // Final submit. In session mode the server scores against its own answer key
-  // and snapshots the result onto the attempt row (which it also pushes back
-  // to the parent's callback_url). Returns the result payload either way.
+  // and snapshots the result onto the attempt row. Returns the result payload
+  // either way. When embedded in a parent iframe (empeo), we also relay the
+  // server-scored attempt back via postMessage so the parent can persist its
+  // own copy — see lib/parentSignal.js. (The legacy callback_url webhook still
+  // fires server-side when a callback_url was supplied at session create.)
   const submitFinal = useCallback(async () => {
     if (!attemptId) return null;
     const res = await submitAttempt(attemptId, answers);
-    return res?.attempt?.result || null;
+    const a = res?.attempt;
+    // The submit endpoint returns the candidate-facing snake_case row (incl. the
+    // raw answers map). Map to the camelCase, answers-free parent shape before
+    // it leaves to the parent (empeo) — same fields the pull endpoints expose.
+    if (a) {
+      notifyParentCompleted(attemptId, {
+        attemptId: a.id,
+        status: 'completed',
+        correctTotal: a.correct_total,
+        maxTotal: a.max_total,
+        cefrLevel: a.cefr_level,
+        cefrLabel: a.cefr_label,
+        result: a.result,
+        completedAt: a.submitted_at,
+      });
+    }
+    return a?.result || null;
   }, [attemptId, answers]);
 
   const startExamTimer = useCallback(() => {

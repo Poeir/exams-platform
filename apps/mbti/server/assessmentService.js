@@ -117,13 +117,16 @@ export async function completeAssessmentAttempt(attemptId, attemptToken, payload
 
   const completed = await prisma.assessmentAttempt.findUnique({ where: { id: attempt.id } });
 
-  // Fire-and-forget webhook push — the candidate gets their result now, the
-  // parent gets the POST on a separate timeline (deliverResult no-ops when no
-  // callbackUrl was supplied).
-  if (completed.callbackUrl) {
-    deliverResult(completed.id).catch((error) =>
-      logger.error('webhook_dispatch_error', { attemptId: completed.id, message: error.message }));
-  }
+  // Webhook push on complete is DISABLED — the parent (empeo) now receives the
+  // result via the iframe postMessage event (see the SPA's lib/parentSignal.js)
+  // and/or pulls it from the result endpoints. The deliverResult() machinery is
+  // intentionally kept for the manual .../redeliver path and so push can be
+  // re-enabled later; just re-instate the call below to bring it back.
+  //
+  // if (completed.callbackUrl) {
+  //   deliverResult(completed.id).catch((error) =>
+  //     logger.error('webhook_dispatch_error', { attemptId: completed.id, message: error.message }));
+  // }
 
   return toResultRecord(completed, attempt.subject);
 }

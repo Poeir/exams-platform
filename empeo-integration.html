@@ -257,8 +257,8 @@
     <li><a href="#flow">Flow การทำงานหลัก</a></li>
     <li><a href="#api-english">API Reference — English Engine</a></li>
     <li><a href="#api-mbti">API Reference — MBTI Engine</a></li>
-    <li><a href="#webhook">Webhook — การรับผลสอบ (สำคัญที่สุด)</a></li>
-    <li><a href="#fallback">ช่องทางสำรอง (Pull / Redeliver)</a></li>
+    <li><a href="#result">การรับผลสอบ — Embed iframe + Event</a></li>
+    <li><a href="#fallback">ช่องทางสำรอง (Pull)</a></li>
     <li><a href="#viewlink">View Link — หน้าผลสอบสำหรับ HR</a></li>
     <li><a href="#ttl">สรุปอายุของ token และลิงก์ทั้งหมด</a></li>
     <li><a href="#checklist">Checklist ฝั่ง Empeo</a></li>
@@ -281,7 +281,7 @@
       </tr>
       <tr>
         <td><strong>MBTI</strong></td>
-        <td>แบบประเมินบุคลิกภาพในบริบทการทำงาน (คำถามเชิงสถานการณ์ 14 ข้อ)</td>
+        <td>แบบประเมินบุคลิกภาพในบริบทการทำงาน (คำถามเชิงสถานการณ์ 18 ข้อต่อรอบ)</td>
         <td>MBTI code (เช่น ISTJ) + เปอร์เซ็นต์รายแกน + ระดับความมั่นใจ</td>
       </tr>
     </table>
@@ -301,7 +301,7 @@
     <div class="col">
       <div class="node orange">
         <div class="t">Empeo Server</div>
-        <div class="d">backend ของ Empeo<br>(ผู้เรียก API + ผู้รับ webhook)</div>
+        <div class="d">backend ของ Empeo<br>(ผู้เรียก API + ฝัง iframe / รับผล)</div>
       </div>
       <div class="node">
         <div class="t">พนักงาน (Browser)</div>
@@ -310,8 +310,8 @@
     </div>
     <div class="arrows">
       <div class="arrow-line">REST API + <code>X-API-Key</code> <span class="ar">⟶</span></div>
-      <div class="arrow-line"><span class="ar">⟵</span> Webhook (ผลสอบ + ลายเซ็น)</div>
-      <div class="arrow-line">เปิดหน้าเว็บข้อสอบ <span class="ar">⟶</span></div>
+      <div class="arrow-line">ฝัง iframe หน้าข้อสอบ <span class="ar">⟶</span></div>
+      <div class="arrow-line"><span class="ar">⟵</span> Event (postMessage) / Pull</div>
     </div>
     <div class="col">
       <div class="gatewaybox">
@@ -331,10 +331,9 @@
 
   <div class="callout info">
     <strong>จุดที่ต้องเข้าใจก่อนอ่านต่อ:</strong>
-    คำตอบและผลสอบทั้งหมดถูกเก็บใน database ของระบบข้อสอบ —
-    Empeo <em>ไม่ได้ดึงข้อมูลจากหน้าเว็บ</em> แต่รับผลได้ 2 ทาง:
-    <strong>ระบบข้อสอบส่งผลมาให้เองผ่าน webhook</strong> (push)
-    หรือ Empeo เรียก API มาขอทีหลัง (pull) — ดูหัวข้อ 7 และ 8
+    คำตอบและผลสอบทั้งหมดถูกเก็บใน database ของระบบข้อสอบ (เป็น "ตัวจริง" เสมอ) —
+    Empeo รับผลได้ 2 ทาง: <strong>iframe ยิง event (postMessage) ตอนสอบเสร็จ</strong>
+    หรือ Empeo เรียก API มาดึง (pull) ทีหลัง — ดูหัวข้อ 7 และ 8
   </div>
 </section>
 
@@ -348,7 +347,7 @@
     <pre><span class="k">X-API-Key</span>: <span class="s">&lt;PARENT_API_KEY&gt;</span>   <span class="c">// แยกตาม environment — ขอจากภูริ</span></pre>
     <ul>
       <li>key เดียวใช้ได้ทั้ง English และ MBTI engine</li>
-      <li>key เดียวกันนี้ใช้เป็น secret สำหรับ <strong>verify ลายเซ็น webhook</strong> ด้วย (หัวข้อ 7)</li>
+      <li>ใช้แนบทุก request ที่เรียก API (สร้าง attempt, ดึงผล, ขอ view-link)</li>
     </ul>
     <div class="callout warn">
       <strong>ห้ามเด็ดขาด:</strong> ห้ามนำ key ไปไว้ใน browser / mobile app / โค้ด frontend ใด ๆ
@@ -372,12 +371,12 @@
 
   <h3>3.3 Naming convention เดียวกันทั้งสอง engine</h3>
   <div class="card">
-    <p>ทุก field ที่ Empeo เห็น (request, response, webhook) เป็น <strong><code>camelCase</code></strong>
+    <p>ทุก field ที่ Empeo เห็น (request, response, event/pull) เป็น <strong><code>camelCase</code></strong>
        และใช้ชื่อ field ชุดเดียวกันทั้งสอง engine — ฝั่ง Empeo จึงเขียนโครงสร้างรับข้อมูล (DTO)
        แค่ชุดเดียว ใช้อ่านผลได้ทั้งสองข้อสอบ:</p>
     <table>
       <tr><th></th><th>ทั้งสอง engine</th></tr>
-      <tr><td>รูปแบบชื่อ field</td><td><code>camelCase</code> (<code>attemptId</code>, <code>externalUserId</code>, <code>callbackUrl</code>, ...)</td></tr>
+      <tr><td>รูปแบบชื่อ field</td><td><code>camelCase</code> (<code>attemptId</code>, <code>externalUserId</code>, <code>completedAt</code>, ...)</td></tr>
       <tr><td>Status ตอนสอบเสร็จ</td><td><code>"completed"</code></td></tr>
       <tr><td>Field เวลาเสร็จ</td><td><code>completedAt</code></td></tr>
       <tr><td>ลิงก์ทำข้อสอบ</td><td><code>launchUrl</code></td></tr>
@@ -402,7 +401,7 @@
         <div class="what">สร้างการสอบ (Create Session / Attempt)</div>
         <p class="small">HR กดสั่งสอบใน Empeo → backend ของ Empeo เรียก
         <code>POST /english/api/sessions</code> หรือ <code>POST /mbti/api/v1/assessment-attempts</code>
-        พร้อมแนบ employee id และ <code>callbackUrl</code> (ที่อยู่รับผล) →
+        พร้อมแนบ employee id →
         ได้ <strong>attempt id + ลิงก์ทำข้อสอบ (<code>launchUrl</code>)</strong> กลับมา</p>
         <div class="callout small" style="margin:8px 0 0">
           <strong>สำคัญ:</strong> Empeo ต้องบันทึก <code>attempt id</code>
@@ -416,25 +415,25 @@
       <div class="body">
         <div class="who">พนักงาน (Browser) → Exam Server</div>
         <div class="what">พนักงานทำข้อสอบ</div>
-        <p class="small">Empeo ส่งลิงก์ให้พนักงาน (อีเมล / ปุ่มในระบบ) → พนักงานเปิดลิงก์ ทำข้อสอบจนจบ
-        → ระบบข้อสอบตรวจคะแนนและเก็บผลใน database ของตัวเอง
-        — <strong>ขั้นนี้ Empeo ไม่ต้องทำอะไรเลย</strong></p>
+        <p class="small">Empeo ฝัง <code>launchUrl</code> เป็น <code>&lt;iframe&gt;</code> ในหน้าเว็บตัวเอง
+        (หรือส่งลิงก์ให้พนักงานเปิดก็ได้) → พนักงานทำข้อสอบจนจบ
+        → ระบบข้อสอบคำนวณคะแนนและเก็บผลใน database ของตัวเอง</p>
       </div>
     </div>
     <div class="step">
       <div class="no"></div>
       <div class="body">
-        <div class="who">Exam Server → Empeo Server</div>
-        <div class="what">ระบบข้อสอบส่งผลกลับมาให้เอง (Webhook)</div>
-        <p class="small">ทันทีที่สอบเสร็จ ระบบจะ <code>POST</code> ผลสอบ (JSON) ไปที่
-        <code>callbackUrl</code> ที่ Empeo บอกไว้ในขั้น 1 พร้อมลายเซ็นดิจิทัล (HMAC) ให้ตรวจสอบว่า
-        มาจากระบบข้อสอบจริง → Empeo ตรวจลายเซ็น → บันทึกผลลง DB → ตอบ <code>200</code></p>
+        <div class="who">iframe → หน้าเว็บ Empeo</div>
+        <div class="what">รับผลผ่าน Event (postMessage)</div>
+        <p class="small">ทันทีที่สอบเสร็จ iframe จะ <code>postMessage</code> ผลสอบ (ที่ server คำนวณแล้ว)
+        ขึ้นไปหาหน้าแม่ของ Empeo → Empeo ตรวจ <code>event.origin</code> → ผูกกับ user ของตัวเอง →
+        บันทึกผลลง DB (ดูหัวข้อ 7) — หรือดึงผลเองทีหลังผ่าน pull (หัวข้อ 8)</p>
       </div>
     </div>
   </div>
 
-  <p class="muted small">ถ้า webhook ส่งไม่ถึง (เช่น server ของ Empeo ล่มชั่วคราว)
-     ระบบจะส่งซ้ำให้เองสูงสุด 5 ครั้ง และยังมีช่องทางตามเก็บผลทีหลังเป็นแผนสำรอง — ดูหัวข้อ 8</p>
+  <p class="muted small">ถ้า event ไม่มาถึง (เช่น พนักงานปิดแท็บก่อน iframe ยิง)
+     ผลไม่หาย — ยังอยู่ใน database ของระบบข้อสอบ Empeo ตามดึงทีหลังได้ผ่าน pull — ดูหัวข้อ 8</p>
 </section>
 
 <!-- ============================================================ -->
@@ -458,7 +457,6 @@
   <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,                           <span class="c">// employee id ของ Empeo</span>
   <span class="k">"email"</span>: <span class="s">"somchai@company.co.th"</span>,                     <span class="c">// optional</span>
   <span class="k">"displayName"</span>: <span class="s">"สมชาย ใจดี"</span>,                           <span class="c">// optional</span>
-  <span class="k">"callbackUrl"</span>: <span class="s">"https://empeo.example.com/api/webhooks/exam-results"</span>,  <span class="c">// ที่อยู่รับผล (แนะนำให้ส่ง)</span>
   <span class="k">"timeLimitMin"</span>: <span class="n">50</span>                                     <span class="c">// optional — ไม่ส่งจะใช้ค่าของชุดข้อสอบ (เต็ม 50 / สั้น 15 นาที)</span>
 }</pre>
       <h3>Response <code>201</code></h3>
@@ -533,18 +531,6 @@
     </div>
   </div>
 
-  <div class="endpoint">
-    <div class="ep-head">
-      <span class="badge post">POST</span>
-      <code class="path">/english/api/attempts/{id}/redeliver</code>
-      <span class="tag auth">X-API-Key</span>
-      <span class="tag">สั่งส่ง webhook ผลสอบซ้ำ</span>
-    </div>
-    <div class="ep-body">
-      <p class="small">body ว่าง → คืน <code>{"delivered": true|false}</code> —
-      ใช้เมื่อ Empeo พลาดรับ webhook รอบแรก (เช่น endpoint ล่มอยู่พอดี)</p>
-    </div>
-  </div>
 </section>
 
 <!-- ============================================================ -->
@@ -566,8 +552,7 @@
   <span class="k">"sourceSystem"</span>: <span class="s">"empeo"</span>,                               <span class="c">// required</span>
   <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,                           <span class="c">// required — id เดียวกับที่ใช้ฝั่ง English</span>
   <span class="k">"email"</span>: <span class="s">"somchai@company.co.th"</span>,                     <span class="c">// optional</span>
-  <span class="k">"displayName"</span>: <span class="s">"สมชาย ใจดี"</span>,                           <span class="c">// optional</span>
-  <span class="k">"callbackUrl"</span>: <span class="s">"https://empeo.example.com/api/webhooks/exam-results"</span>  <span class="c">// ที่อยู่รับผล</span>
+  <span class="k">"displayName"</span>: <span class="s">"สมชาย ใจดี"</span>                            <span class="c">// optional</span>
 }</pre>
       <h3>Response <code>201</code></h3>
 <pre>{
@@ -618,46 +603,42 @@
     </div>
   </div>
 
-  <div class="endpoint">
-    <div class="ep-head">
-      <span class="badge post">POST</span>
-      <code class="path">/mbti/api/v1/assessment-attempts/{attemptId}/redeliver</code>
-      <span class="tag auth">X-API-Key</span>
-      <span class="tag">สั่งส่ง webhook ซ้ำ</span>
-    </div>
-    <div class="ep-body">
-      <p class="small">body ว่าง → คืน <code>{"delivered": true|false}</code></p>
-    </div>
-  </div>
 </section>
 
 <!-- ============================================================ -->
-<section id="webhook">
-  <h2>7. Webhook — การรับผลสอบ (สำคัญที่สุด)</h2>
-  <p><strong>นี่คือสิ่งเดียวที่ Empeo ต้อง "สร้างใหม่":</strong> endpoint 1 ตัว
-     (หรือ 2 ตัวแยกตามชนิดข้อสอบ) ไว้รอรับผลสอบ — เมื่อพนักงานสอบเสร็จ
-     ระบบข้อสอบจะ <code>POST</code> ผลมาที่ <code>callbackUrl</code>
-     ที่ Empeo แนบไว้ตอนสั่งเปิดสอบ</p>
+<section id="result">
+  <h2>7. การรับผลสอบ — Embed iframe + Event (postMessage)</h2>
+  <p>Empeo <strong>ฝังหน้าข้อสอบเป็น <code>&lt;iframe&gt;</code></strong> ในหน้าเว็บของตัวเอง —
+     พอพนักงานทำเสร็จ ระบบข้อสอบ (server) คำนวณคะแนนและเก็บผลใน DB ของตัวเอง จากนั้น
+     iframe จะ <code>postMessage</code> ผลสอบ (ที่ server คำนวณแล้ว) ขึ้นไปหาหน้าแม่ของ Empeo
+     → Empeo รับ event แล้วบันทึกลง DB เอง <strong>ไม่ต้องเปิด webhook endpoint</strong></p>
 
-  <h3>7.1 Headers ที่ส่งมาด้วยทุกครั้ง</h3>
-<pre><span class="k">POST</span> &lt;callbackUrl ของ Empeo&gt;
-<span class="k">Content-Type</span>: application/json
-<span class="k">X-Signature</span>: sha256=&lt;HMAC-SHA256(body ดิบ, PARENT_API_KEY) เป็น hex ตัวพิมพ์เล็ก&gt;
-<span class="k">X-Attempt-Id</span>: &lt;attempt id&gt;</pre>
+  <div class="callout warn">
+    <strong>ข้อควรรู้เรื่องความน่าเชื่อถือ:</strong> event วิ่งผ่านเบราว์เซอร์ของผู้สอบ
+    ตามหลักจึงแก้ค่าได้ — <strong>"ตัวจริง" ของผลสอบอยู่ใน DB ของระบบข้อสอบเสมอ</strong>
+    ถ้าต้องการความชัวร์ (หรือเผื่อ event ไม่มาเพราะผู้สอบปิดแท็บก่อน) Empeo ดึงผลตัวจริงจาก
+    pull endpoint ได้ตลอด — ดูหัวข้อ 8
+  </div>
 
-  <h3>7.2 Payload — English (ส่งเมื่อสอบเสร็จ — <code>status: "completed"</code>)</h3>
+  <h3>7.1 Event ที่ iframe ยิงขึ้นไป</h3>
+<pre><span class="c">// iframe (หน้าข้อสอบ) → หน้าแม่ของ Empeo</span>
+window.parent.postMessage({
+  <span class="k">type</span>: <span class="s">"EXAM_COMPLETED"</span>,
+  <span class="k">attemptId</span>: <span class="s">"36930888-b8c8-48f6-9400-ca05d0c59a6f"</span>,
+  <span class="k">result</span>: { <span class="c">/* ก้อน result ที่ server คำนวณ — โครงตามหัวข้อ 7.2 / 7.3 */</span> }
+}, EMPEO_ORIGIN);  <span class="c">// ★ ส่งเฉพาะ origin ของ Empeo ที่อยู่ใน allowlist เท่านั้น (ไม่ใช่ "*")</span></pre>
+  <p class="small muted"><code>result</code> เป็นค่าที่ server คำนวณแล้ว iframe แค่ส่งต่อ —
+     เป็นก้อนเดียวกับที่ pull endpoint (หัวข้อ 8) คืนให้</p>
+
+  <h3>7.2 result object — English</h3>
 <pre>{
   <span class="k">"attemptId"</span>: <span class="s">"36930888-b8c8-48f6-9400-ca05d0c59a6f"</span>,
-  <span class="k">"paperId"</span>: <span class="s">"41bf2991-..."</span>,
-  <span class="k">"subjectId"</span>: <span class="s">"c1a2..."</span>,
-  <span class="k">"sourceSystem"</span>: <span class="s">"empeo"</span>,
-  <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,
   <span class="k">"status"</span>: <span class="s">"completed"</span>,
-  <span class="k">"completedAt"</span>: <span class="s">"2026-06-03T10:15:00.000Z"</span>,
   <span class="k">"correctTotal"</span>: <span class="n">38</span>,           <span class="c">// ★ คะแนนรวม (ดิบ)</span>
   <span class="k">"maxTotal"</span>: <span class="n">50</span>,              <span class="c">// ★ คะแนนเต็ม (ชุดเต็ม 50 / ชุดสั้น 20)</span>
   <span class="k">"cefrLevel"</span>: <span class="n">4</span>,              <span class="c">// ★ band ระดับ (ตัวเลข — ดูตารางใต้ตัวอย่าง)</span>
   <span class="k">"cefrLabel"</span>: <span class="s">"Advanced"</span>,    <span class="c">// ป้ายชื่อระดับ — ตรงกับที่แสดงบนหน้าผลสอบ</span>
+  <span class="k">"completedAt"</span>: <span class="s">"2026-06-03T10:15:00.000Z"</span>,
   <span class="k">"result"</span>: {
     <span class="k">"parts"</span>: [                  <span class="c">// คะแนนแยกรายพาร์ท (7 พาร์ท)</span>
       { <span class="k">"id"</span>: <span class="n">1</span>, <span class="k">"title"</span>: <span class="s">"Photographs"</span>, <span class="k">"section"</span>: <span class="s">"Listening"</span>, <span class="k">"correct"</span>: <span class="n">5</span>, <span class="k">"total"</span>: <span class="n">6</span> },
@@ -670,24 +651,26 @@
       <span class="k">"reading"</span>:    { <span class="k">"correct"</span>: <span class="n">7</span>,  <span class="k">"total"</span>: <span class="n">10</span> },
       <span class="k">"total"</span>:      { <span class="k">"correct"</span>: <span class="n">38</span>, <span class="k">"total"</span>: <span class="n">50</span> }
     }
-  },
-  <span class="k">"engineVersion"</span>: <span class="s">"1.0"</span>
+  }
 }</pre>
-  <p class="small muted">แนะนำให้แยก <code>correctTotal</code> / <code>maxTotal</code> /
-     <code>cefrLevel</code> / <code>cefrLabel</code> เก็บเป็นคอลัมน์ของตัวเอง ส่วน <code>result</code>
-     เก็บทั้งก้อนเป็น JSON ไว้ใช้แสดงคะแนนแยกละเอียด</p>
+  <p class="small muted">นี่คือก้อนที่อยู่ใน <code>result</code> ของ event (และที่ <strong>pull endpoint</strong>
+     หัวข้อ 8 คืนให้) · ก้อนจาก pull จะมี field เพิ่มอีกเล็กน้อย (<code>paperId</code>, <code>subjectId</code>,
+     <code>sourceSystem</code>, <code>externalUserId</code>, <code>timeLimitMin</code>, <code>startedAt</code>,
+     <code>expiresAt</code>) — core fields เหมือนกัน · แนะนำแยก <code>correctTotal</code> /
+     <code>maxTotal</code> / <code>cefrLevel</code> / <code>cefrLabel</code> เก็บเป็นคอลัมน์ ส่วน
+     <code>result</code> เก็บทั้งก้อนเป็น JSON</p>
   <p class="small muted">เกณฑ์ตัดระดับ (<code>cefrLevel</code> / <code>cefrLabel</code>) ขึ้นกับชุดข้อสอบ —
      <strong>ชุดเต็ม 50 ข้อ</strong>: 0–15 = 1 Novice · 16–24 = 2 Beginner · 25–33 = 3 Intermediate · 34–41 = 4 Advanced · 42–50 = 5 Expert ·
      <strong>ชุดสั้น 20 ข้อ</strong>: 0–6 = 1 Beginner · 7–15 = 2 Intermediate · 16–20 = 3 Advanced
      (เกณฑ์ทั้งคู่คิดจากคะแนนดิบ <code>correctTotal</code> · <code>cefrLabel</code> ตรงกับที่แสดงบนหน้าผลสอบของพนักงาน)</p>
 
-  <h3>7.3 Payload — MBTI (ส่งเมื่อสอบเสร็จ — <code>status: "completed"</code>)</h3>
+  <h3>7.3 result object — MBTI</h3>
 <pre>{
-  <span class="k">"attemptId"</span>: <span class="s">"3c9f04ae-39dc-4e22-9bb1-c1224d7e9222"</span>,
-  <span class="k">"subjectId"</span>: <span class="s">"a7b3..."</span>,
-  <span class="k">"sourceSystem"</span>: <span class="s">"empeo"</span>,
-  <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,
-  <span class="k">"status"</span>: <span class="s">"completed"</span>,
+  <span class="k">"id"</span>: <span class="s">"3c9f04ae-39dc-4e22-9bb1-c1224d7e9222"</span>,
+  <span class="k">"attemptId"</span>: <span class="s">"3c9f04ae-39dc-4e22-9bb1-c1224d7e9222"</span>,  <span class="c">// = id (results merged onto attempts)</span>
+  <span class="k">"userId"</span>: <span class="s">"emp-001"</span>,
+  <span class="k">"user"</span>: { <span class="k">"id"</span>: <span class="s">"emp-001"</span>, <span class="k">"email"</span>: <span class="s">"somchai@company.co.th"</span>, <span class="k">"name"</span>: <span class="s">"สมชาย ใจดี"</span> },
+  <span class="k">"source"</span>: <span class="s">"service-api"</span>,
   <span class="k">"completedAt"</span>: <span class="s">"2026-06-03T10:20:00.000Z"</span>,
   <span class="k">"result"</span>: {
     <span class="k">"code"</span>: <span class="s">"ISTJ"</span>,             <span class="c">// ★ MBTI code</span>
@@ -702,94 +685,60 @@
     <span class="k">"midzones"</span>:   [],           <span class="c">// แกนที่ชี้ขาดไม่ได้ เช่น ["EI"]</span>
     <span class="k">"facets"</span>:     { <span class="k">"deepFocus"</span>: <span class="n">1.8</span>, <span class="k">"concrete"</span>: <span class="n">2.4</span> }  <span class="c">// มิติเสริม</span>
   },
-  <span class="k">"engineVersion"</span>: <span class="s">"1.0"</span>
+  <span class="k">"responses"</span>: [ <span class="c">/* ... */</span> ]   <span class="c">// คำตอบรายข้อ — รวมมาในก้อน result record (ต่างจาก English)</span>
 }</pre>
   <p class="small muted"><code>confidence</code> มี 4 ระดับ: <code>midzone</code> (&lt;55%) →
      <code>slight</code> → <code>clear</code> → <code>veryClear</code> (80%+) ·
-     คำตอบรายข้อของพนักงาน<strong>ไม่ถูกส่งมาใน webhook</strong> (ตั้งใจตัดออก) ·
      แนะนำให้แยก <code>result.code</code> เก็บเป็นคอลัมน์ ที่เหลือเก็บทั้งก้อนเป็น JSON</p>
 
-  <h3>7.4 กติกา 3 ข้อที่ endpoint ฝั่ง Empeo ต้องทำ</h3>
+  <h3>7.4 ตัวอย่าง listener ฝั่ง Empeo</h3>
+<pre><span class="c">// หน้าเว็บ Empeo ที่ฝัง iframe</span>
+const EXAM_APP_ORIGIN = <span class="s">"https://exam.gofive.co.th"</span>;  <span class="c">// origin ของระบบข้อสอบ</span>
 
-  <div class="card">
-    <p><strong>① ตรวจลายเซ็นก่อนเชื่อข้อมูล</strong> — คำนวณ HMAC-SHA256 จาก
-       <strong>body ดิบ (ก่อนแปลงเป็น JSON)</strong> ด้วย <code>PARENT_API_KEY</code>
-       แล้วเทียบกับค่าใน header <code>X-Signature</code> ด้วยฟังก์ชันเทียบแบบ timing-safe
-       (กันการเดา key จากเวลาตอบ):</p>
-<pre><span class="c">// C# / .NET</span>
-[HttpPost(<span class="s">"api/webhooks/exam-results"</span>)]
-public async Task&lt;IActionResult&gt; Receive()
-{
-    using var reader = new StreamReader(Request.Body);
-    var rawBody = await reader.ReadToEndAsync();              <span class="c">// ← ต้องเป็น body ดิบ ก่อนแปลง JSON</span>
+window.addEventListener(<span class="s">"message"</span>, async (event) =&gt; {
+  <span class="k">if</span> (event.origin !== EXAM_APP_ORIGIN) <span class="k">return</span>;        <span class="c">// ★ ตรวจ origin ผู้ส่ง</span>
+  <span class="k">if</span> (event.data?.type !== <span class="s">"EXAM_COMPLETED"</span>) <span class="k">return</span>;
 
-    var key = Encoding.UTF8.GetBytes(_config[<span class="s">"ParentApiKey"</span>]);
-    using var hmac = new HMACSHA256(key);
-    var expected = <span class="s">"sha256="</span> + Convert.ToHexString(
-        hmac.ComputeHash(Encoding.UTF8.GetBytes(rawBody))).ToLowerInvariant();
+  const { attemptId, result } = event.data;
+  <span class="c">// ★ ผูกผลกับ "user ที่ login อยู่" จาก session ของ Empeo เอง — อย่าเชื่อ user จาก event</span>
+  await saveExamResult({ userId: currentSession.userId, attemptId, result });
+});</pre>
 
-    var received = Request.Headers[<span class="s">"X-Signature"</span>].ToString();
-    if (!CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(received)))
-        return Unauthorized();
-
-    var payload = JsonSerializer.Deserialize&lt;JsonElement&gt;(rawBody);
-    <span class="c">// ② บันทึกลง DB ด้วย attempt id (upsert) ... ③ ตอบ 200 ให้เร็ว</span>
-    return Ok();
-}</pre>
-<pre><span class="c">// Node.js / Express (เผื่อใช้ทดสอบ)</span>
-app.post(<span class="s">'/api/webhooks/exam-results'</span>,
-  express.raw({ type: <span class="s">'application/json'</span> }),       <span class="c">// ← ต้องได้ body ดิบ</span>
-  (req, res) =&gt; {
-    const expected = <span class="s">'sha256='</span> + crypto.createHmac(<span class="s">'sha256'</span>, PARENT_API_KEY)
-                                       .update(req.body).digest(<span class="s">'hex'</span>);
-    const ok = crypto.timingSafeEqual(Buffer.from(expected),
-                                      Buffer.from(req.headers[<span class="s">'x-signature'</span>] || <span class="s">''</span>));
-    if (!ok) return res.status(<span class="n">401</span>).end();
-    const payload = JSON.parse(req.body);
-    <span class="c">// upsert แล้วตอบ</span>
-    res.status(<span class="n">200</span>).end();
-  });</pre>
-
-    <p><strong>② บันทึกแบบ upsert ด้วย attempt id (มีแล้วอัปเดตทับ ยังไม่มีค่อยสร้างใหม่)</strong><br>
-       <span class="small">ถ้าระบบข้อสอบไม่ได้รับคำตอบ 2xx จะส่งซ้ำให้สูงสุด <strong>5 ครั้ง</strong>
-       — แปลว่า Empeo อาจได้รับผลชุดเดิมซ้ำหลายรอบ ดังนั้น endpoint
-       ต้องรับข้อมูลซ้ำได้โดยผลใน DB ไม่เพี้ยน (idempotent)
-       ไม่ใช่ insert แถวใหม่ทุกครั้งที่มีของเข้ามา</span></p>
-
-    <p><strong>③ ตอบ 2xx ให้เร็ว</strong><br>
-       <span class="small">ฝั่งผู้ส่งรอคำตอบแค่ <strong>8 วินาที</strong> —
-       บันทึกลง DB แล้วตอบ <code>200</code> ทันที งานที่ใช้เวลานาน (ส่งแจ้งเตือน, ประมวลผลต่อ)
-       ให้แยกไปทำเบื้องหลังทีหลัง</span></p>
+  <div class="callout warn">
+    <strong>2 จุดที่ต้องทำให้ถูก:</strong>
+    <strong>(1)</strong> ตรวจ <code>event.origin</code> ให้ตรงกับ origin ของระบบข้อสอบ (cross-origin เสมอ เพราะคนละโดเมน) ·
+    <strong>(2)</strong> ระบุว่าเป็นพนักงานคนไหนจาก <strong>session ของ Empeo เอง</strong> ไม่ใช่จากค่าใน event
+    <br><span class="small">หมายเหตุ: ต้องแจ้ง <strong>origin ของหน้าเว็บ Empeo</strong> (เช่น <code>https://app.empeo.com</code>)
+    ให้ทีมระบบข้อสอบใส่ allowlist ก่อน iframe จึงจะยอมส่ง event ให้</span>
   </div>
+
+  <h3>7.5 Retest</h3>
+  <p>การสอบซ้ำ (retest) ทำได้โดยเปิด session ใหม่ (หัวข้อ 5/6) → ได้
+     <code>attemptId</code> ใหม่ + <code>launchUrl</code> ใหม่ → ฝัง iframe ใหม่
+     ทุกครั้งที่สอบจบจะยิง event ที่มี <strong>attemptId แยกของแต่ละครั้ง</strong>
+     Empeo เก็บแยกได้เลย และเปิดดูผลย้อนหลังครั้งไหนก็ได้ผ่าน
+     <code>POST .../attempts/:id/view-link</code> ของครั้งนั้น (ดูหัวข้อ 9)</p>
 </section>
 
 <!-- ============================================================ -->
 <section id="fallback">
-  <h2>8. ช่องทางสำรอง (Pull / Redeliver)</h2>
-  <p>กรณี webhook ส่งไม่ถึง (เช่น server ของ Empeo ล่มจนระบบส่งซ้ำครบ 5 ครั้ง หรือ network มีปัญหา)
-     — ผลสอบ<strong>ไม่หายไปไหน</strong> ยังอยู่ใน database ของระบบข้อสอบ
-     Empeo ตามมาเก็บทีหลังได้ 2 วิธี:</p>
+  <h2>8. ช่องทางสำรอง (Pull)</h2>
+  <p>ถ้า event ไม่มาถึง (เช่น พนักงานปิดแท็บก่อน iframe ยิง) หรือ Empeo อยากได้ผล "ตัวจริง"
+     มายืนยัน — ผลสอบ<strong>ไม่หายไปไหน</strong> ยังอยู่ใน database ของระบบข้อสอบ
+     Empeo ดึงเองได้ผ่าน pull endpoint:</p>
   <table>
     <tr><th style="width:120px">วิธี</th><th>Endpoint</th><th>เหมาะกับ</th></tr>
     <tr>
-      <td><strong>Pull</strong><br><span class="small muted">เรียกไปดึงผลเอง</span></td>
+      <td><strong>Pull (ราย user)</strong><br><span class="small muted">ดึงประวัติของพนักงาน</span></td>
       <td><code>GET /english/api/subjects/empeo/{empId}/results</code><br>
           <code>GET /mbti/api/v1/subjects/empeo/{empId}/results</code></td>
-      <td>ดึงผลมาเก็บเองโดยตรง ไม่ต้องรอ webhook</td>
-    </tr>
-    <tr>
-      <td><strong>Redeliver</strong><br><span class="small muted">สั่งให้ส่งใหม่</span></td>
-      <td><code>POST /english/api/attempts/{id}/redeliver</code><br>
-          <code>POST /mbti/api/v1/assessment-attempts/{id}/redeliver</code></td>
-      <td>สั่งให้ระบบส่ง webhook เดิมมาอีกรอบ — ผลเข้าทางเดียวกับ flow ปกติ</td>
+      <td>คืน array ของผลที่สอบเสร็จแล้ว เรียงใหม่→เก่า (รวม retest ทุกครั้ง) · ก้อน result โครงตามหัวข้อ 7.2 / 7.3</td>
     </tr>
   </table>
   <div class="callout">
     <strong>แนะนำ:</strong> ตั้งงานอัตโนมัติฝั่ง Empeo (เช่น รันทุก 30 นาที)
     คอยเช็คว่ามีการสอบไหนสั่งเปิดไว้นานแล้วแต่ยังไม่มีผลเข้ามาใน DB ของ Empeo
-    → ค่อยดึงผล (pull) หรือสั่งส่งซ้ำ (redeliver) เก็บตก
-    — แบบนี้ผลจะครบ 100% โดยมี webhook เป็นทางหลักที่เร็วที่สุด
+    → ค่อยดึงผล (pull) เก็บตก — แบบนี้ผลจะครบ 100% โดยมี event เป็นทางหลักที่เร็วที่สุด
   </div>
 </section>
 
@@ -847,11 +796,6 @@ app.post(<span class="s">'/api/webhooks/exam-results'</span>,
       <td><strong>15 นาที</strong></td>
       <td>หมดอายุแล้วขอใหม่ได้เรื่อย ๆ ไม่จำกัดจำนวนครั้ง</td>
     </tr>
-    <tr>
-      <td>การส่งซ้ำของ webhook</td>
-      <td>สูงสุด <strong>5 ครั้ง</strong> · รอคำตอบ 8 วินาที/ครั้ง</td>
-      <td>พลาดครบ 5 ครั้ง → ตามเก็บด้วย pull หรือ redeliver (หัวข้อ 8)</td>
-    </tr>
   </table>
   <p class="small muted">เปิดลิงก์ที่หมดอายุแล้ว → ได้ <code>401</code> พร้อมข้อความบอกว่า token
      invalid/expired — สร้างการสอบใหม่หรือขอลิงก์ใหม่ได้เสมอ</p>
@@ -864,13 +808,14 @@ app.post(<span class="s">'/api/webhooks/exam-results'</span>,
     <li><strong>เก็บ mapping ใน DB:</strong> ตาราง/คอลัมน์เก็บ <code>attemptId</code>
         ผูกกับ employee + ชนิดข้อสอบ ตั้งแต่ตอนสร้าง session
         และคอลัมน์ผลสอบ (English: คะแนน + CEFR · MBTI: code) + JSON เต็ม</li>
-    <li><strong>Webhook endpoint 1 ตัว:</strong> รับ POST → ตรวจลายเซ็น <code>X-Signature</code>
-        (HMAC จาก body ดิบ) → บันทึกแบบ upsert ด้วย attempt id → ตอบ <code>200</code> ให้เร็ว
-        (โค้ดตัวอย่างอยู่หัวข้อ 7.4)</li>
+    <li><strong>ฝัง iframe + event listener:</strong> ฝัง <code>launchUrl</code> เป็น <code>&lt;iframe&gt;</code> →
+        <code>addEventListener("message")</code> → ตรวจ <code>event.origin</code> →
+        ผูกผลกับ user ของตัวเอง → บันทึกแบบ upsert ด้วย attempt id
+        (โค้ดตัวอย่างอยู่หัวข้อ 7.4) · แจ้ง origin ของหน้าเว็บ Empeo ให้ทีมระบบข้อสอบใส่ allowlist</li>
     <li><strong>เก็บ <code>PARENT_API_KEY</code> ฝั่ง server เท่านั้น</strong>
-        (config/secret store) — ใช้ทั้งตอนเรียก API และตอนตรวจลายเซ็น ห้ามอยู่ใน frontend</li>
+        (config/secret store) — ใช้แนบทุก request ที่เรียก API ห้ามอยู่ใน frontend</li>
     <li><strong>(แนะนำ) งานเก็บตกอัตโนมัติ:</strong> ตรวจการสอบที่เปิดไว้นานแต่ยังไม่มีผล
-        แล้วดึงผล (pull) หรือสั่งส่งซ้ำ (redeliver) — กันผลตกหล่น</li>
+        แล้วดึงผล (pull) — กันผลตกหล่นกรณี event ไม่มา</li>
   </ul>
   <p class="small muted">3 อย่างนี้ <strong>ถามภูริ</strong>: Base URL ของแต่ละ environment ·
      <code>PARENT_API_KEY</code> ของแต่ละ environment (ส่งผ่านช่องทางปลอดภัย) ·
@@ -892,7 +837,7 @@ app.post(<span class="s">'/api/webhooks/exam-results'</span>,
     <tr><th>อะไร</th><th>Path</th></tr>
     <tr><td>Swagger — English</td><td><code>/english/api/docs</code></td></tr>
     <tr><td>Swagger — MBTI</td><td><code>/mbti/api/docs</code></td></tr>
-    <tr><td>Health check รวม</td><td><code>/api/health</code> → <code>{"status":"ok","engines":{"english":"ok","mbti":"ok"}}</code></td></tr>
+    <tr><td>Health check รวม</td><td><code>/api/health</code> → <code>{"status":"ok","engines":{"english":true,"mbti":true}}</code> <span class="muted small">(status เป็น <code>"degraded"</code> + HTTP 503 ถ้า engine ใด ping DB ไม่ผ่าน)</span></td></tr>
     <tr><td>หน้า landing (ลองกดเล่นได้)</td><td><code>/</code></td></tr>
   </table>
 
@@ -900,7 +845,7 @@ app.post(<span class="s">'/api/webhooks/exam-results'</span>,
   <p>มี <strong>Postman collection</strong> ครอบคลุมทุก endpoint ในเอกสารนี้ (ตัวแปร
      <code>{{base}}</code> + <code>{{parent_api_key}}</code>) —
      ขอได้จากภูริ (โฟลเดอร์ <code>postman-api-for-parent/</code>) ·
-     โค้ดตัวอย่างฝั่งรับ webhook (ตรวจลายเซ็น) อยู่ในหัวข้อ 7.4</p>
+     โค้ดตัวอย่าง event listener ฝั่ง Empeo อยู่ในหัวข้อ 7.4</p>
 
   <footer>
     เอกสารนี้เขียนจากโค้ดจริงของระบบ ณ มิถุนายน 2026 —

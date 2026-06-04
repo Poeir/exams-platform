@@ -5,6 +5,7 @@ import { Quiz } from './screens/Quiz.jsx';
 import { Result } from './screens/Result.jsx';
 import { RESULT_TYPE_CODES } from './lib/resultCatalog.js';
 import { buildExportPayload, emitResult, setResultTransport } from './lib/resultExport.js';
+import { notifyParentCompleted } from './lib/parentSignal.js';
 import {
   completeServiceAttempt,
   createServiceAttempt,
@@ -214,6 +215,10 @@ export default function App() {
       ]);
 
       setResultRecord(transportResult || null);
+      // When embedded in a parent iframe (empeo), relay the server-scored result
+      // back via postMessage so the parent can persist its own copy — see
+      // lib/parentSignal.js. No-op outside an iframe / for the mock transport.
+      notifyParentCompleted(payload.attemptId, transportResult ?? null);
       setActiveAttempt(null);
       if (transportResult?.id) {
         updateResultUrl(

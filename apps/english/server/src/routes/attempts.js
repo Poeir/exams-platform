@@ -535,16 +535,20 @@ router.post('/attempts/:id/submit', async (req, res, next) => {
       });
     }
 
-    // Fire-and-forget webhook on the first submit. On idempotent re-submits we
-    // skip — the original delivery already drained (or is being retried).
-    if (!snapshot.already && snapshot.attempt.callback_url) {
-      deliverResult(snapshot.attempt.id).catch((e) =>
-        log.error('webhook_dispatch_error', {
-          attempt_id: snapshot.attempt.id,
-          err_message: e && e.message,
-        })
-      );
-    }
+    // Webhook push on submit is DISABLED — the parent (empeo) now receives the
+    // result via the iframe postMessage event (see the SPA's lib/parentSignal.js)
+    // and/or pulls it from the result endpoints. The deliverResult() machinery is
+    // intentionally kept for the manual POST /attempts/:id/redeliver path and so
+    // push can be re-enabled later; just re-instate the call below to bring it back.
+    //
+    // if (!snapshot.already && snapshot.attempt.callback_url) {
+    //   deliverResult(snapshot.attempt.id).catch((e) =>
+    //     log.error('webhook_dispatch_error', {
+    //       attempt_id: snapshot.attempt.id,
+    //       err_message: e && e.message,
+    //     })
+    //   );
+    // }
 
     res.json({ attempt: rowToAttempt(snapshot.attempt) });
   } catch (err) { next(err); }
