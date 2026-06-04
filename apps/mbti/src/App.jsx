@@ -3,6 +3,7 @@ import { Icon, Loading } from './components.jsx';
 import { Landing, Purpose } from './screens/Landing.jsx';
 import { Quiz } from './screens/Quiz.jsx';
 import { Result } from './screens/Result.jsx';
+import { withBase } from './lib/base.js';
 import { RESULT_TYPE_CODES } from './lib/resultCatalog.js';
 import { buildExportPayload, emitResult, setResultTransport } from './lib/resultExport.js';
 import { notifyParentCompleted } from './lib/parentSignal.js';
@@ -412,8 +413,9 @@ function TopNav({ screen, onHome }) {
           onClick={onHome}
           style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <span className="appnav-logo-dot"></span>
-          <span>Personality Test</span>
+          <img src={withBase('/logo.png')} alt="empeo" className="appnav-logo-mark" />
+          <span className="appnav-logo-pipe">|</span>
+          <span>Work Persona</span>
         </button>
         <div className="appnav-spacer"></div>
       </div>

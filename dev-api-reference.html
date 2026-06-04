@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gofive Exams — Dev API Reference (English + MBTI)</title>
+<style>
+  :root {
+    --orange: #F05B2F;
+    --orange-soft: #FDEFE9;
+    --ink: #1f2430;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --bg: #f7f7f8;
+    --card: #ffffff;
+    --code-bg: #1e2430;
+    --code-fg: #e6e8ee;
+    --green: #16a34a;
+    --blue: #2563eb;
+    --amber: #d97706;
+    --red: #dc2626;
+    --violet: #7c3aed;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "IBM Plex Sans Thai", "Segoe UI", -apple-system, "Noto Sans Thai", Tahoma, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.65;
+    font-size: 15.5px;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px 90px; }
+
+  header.hero {
+    background: linear-gradient(135deg, #20242e 0%, #2d3340 100%);
+    color: #fff;
+    padding: 44px 20px 36px;
+    margin-bottom: 28px;
+  }
+  header.hero .wrap { padding-bottom: 0; }
+  header.hero h1 { margin: 0 0 6px; font-size: 27px; }
+  header.hero h1 .x { color: var(--orange); }
+  header.hero p { margin: 0; color: #c7cbd4; max-width: 760px; }
+  .meta-chips { margin-top: 18px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.18);
+    color: #e6e8ee;
+    border-radius: 999px;
+    padding: 3px 12px;
+    font-size: 12.5px;
+  }
+
+  nav.toc {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 34px;
+  }
+  nav.toc strong { display: block; margin-bottom: 8px; }
+  nav.toc ol { margin: 0; padding-left: 22px; columns: 2; column-gap: 40px; }
+  nav.toc li { margin: 3px 0; break-inside: avoid; }
+  nav.toc a { color: var(--ink); text-decoration: none; }
+  nav.toc a:hover { color: var(--orange); }
+
+  section { margin-bottom: 46px; }
+  h2 {
+    font-size: 21px;
+    border-left: 5px solid var(--orange);
+    padding-left: 12px;
+    margin: 0 0 16px;
+    scroll-margin-top: 16px;
+  }
+  h2 .eng { font-size: 13px; font-weight: 500; color: var(--muted); }
+  h3 { font-size: 16.5px; margin: 26px 0 10px; }
+  p { margin: 10px 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 22px;
+  }
+
+  .callout {
+    border-left: 4px solid var(--orange);
+    background: var(--orange-soft);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 16px;
+    margin: 14px 0;
+  }
+  .callout.warn { border-left-color: var(--red); background: #fdeaea; }
+  .callout.info { border-left-color: var(--blue); background: #eaf1fd; }
+  .callout strong:first-child { display: inline-block; margin-bottom: 2px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; background: var(--card); font-size: 14.5px; }
+  th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: #f1f2f4; font-weight: 600; }
+  td code, p code, li code, h3 code {
+    background: #eef0f3;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 13px;
+    font-family: Consolas, "Courier New", monospace;
+  }
+
+  pre {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border-radius: 10px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.55;
+    font-family: Consolas, "Courier New", monospace;
+  }
+  pre .c  { color: #7d879c; }   /* comment */
+  pre .k  { color: #79b8ff; }   /* key */
+  pre .s  { color: #9ecb88; }   /* string */
+  pre .n  { color: #e6b450; }   /* number */
+  pre .b  { color: #ff8a65; }   /* boolean / null / highlight */
+  pre .hl { color: #ff8a65; }
+
+  .src {
+    display: inline-block;
+    font: 600 11.5px/1.6 Consolas, monospace;
+    color: var(--violet);
+    background: #f3effe;
+    border: 1px solid #e4d9fb;
+    border-radius: 6px;
+    padding: 1px 8px;
+    margin-left: 6px;
+  }
+
+  .endpoint {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin: 16px 0;
+    overflow: hidden;
+  }
+  .endpoint .ep-head {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 12px 18px;
+    background: #fafafb;
+    border-bottom: 1px solid var(--line);
+  }
+  .endpoint .ep-head code.path { background: none; font-size: 14px; font-weight: 600; padding: 0; }
+  .endpoint .ep-body { padding: 6px 18px 16px; }
+  .badge {
+    display: inline-block; min-width: 52px; text-align: center;
+    font: 700 12px/1.7 Consolas, monospace;
+    border-radius: 6px; padding: 1px 8px; color: #fff;
+  }
+  .badge.get  { background: var(--green); }
+  .badge.post { background: var(--blue); }
+  .tag {
+    font-size: 11.5px; border-radius: 999px; padding: 2px 10px;
+    border: 1px solid var(--line); color: var(--muted); background: #fff;
+  }
+  .tag.auth   { border-color: var(--amber); color: var(--amber); }
+  .tag.bearer { border-color: var(--violet); color: var(--violet); }
+  .tag.open   { border-color: var(--green); color: var(--green); }
+
+  .enginerow { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .enginecol h3 { margin-top: 6px; }
+  .enginecol .label {
+    font: 700 12px/1.6 Consolas, monospace; text-transform: uppercase;
+    letter-spacing: .04em; padding: 2px 10px; border-radius: 6px; color: #fff;
+    display: inline-block; margin-bottom: 6px;
+  }
+  .enginecol .label.en { background: var(--blue); }
+  .enginecol .label.mb { background: var(--violet); }
+
+  .checklist { list-style: none; padding: 0; margin: 12px 0; }
+  .checklist li {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 16px 10px 42px; margin: 8px 0; position: relative;
+  }
+  .checklist li::before {
+    content: "\2714"; position: absolute; left: 14px; top: 9px;
+    color: var(--green); font-weight: 700;
+  }
+
+  footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+  @media (max-width: 820px) {
+    nav.toc ol { columns: 1; }
+    .enginerow { grid-template-columns: 1fr; }
+  }
+  @media print {
+    body { background: #fff; }
+    header.hero { background: #20242e; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    pre { white-space: pre-wrap; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>Gofive Exams <span class="x">×</span> Empeo — Dev API Reference</h1>
+    <p>เอกสารฉบับ developer — request / response / webhook <strong>body จริงทุกตัว</strong> ของทั้งสอง engine
+       (English Proficiency + MBTI) อ้างอิงไฟล์และบรรทัดโค้ดจริง พร้อมจุดที่สอง engine ต่างกัน
+       เหมาะกับคนที่กำลังเขียนโค้ดฝั่ง Empeo</p>
+    <div class="meta-chips">
+      <span class="chip">Unified camelCase contract</span>
+      <span class="chip">Auth: X-API-Key</span>
+      <span class="chip">Webhook: HMAC-SHA256</span>
+      <span class="chip">เขียนจากโค้ด ณ มิ.ย. 2026</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <strong>สารบัญ</strong>
+  <ol>
+    <li><a href="#tldr">0. TL;DR — Empeo ต้องทำอะไรบ้าง</a></li>
+    <li><a href="#shared">1. กติกาที่ใช้ร่วม 2 engine</a></li>
+    <li><a href="#create">2. สร้างการสอบ + รับ launchUrl</a></li>
+    <li><a href="#webhook">3. Webhook payload (body จริง)</a></li>
+    <li><a href="#verify">4. Verify ลายเซ็น + retry</a></li>
+    <li><a href="#pull">5. Pull / Redeliver (ช่องทางสำรอง)</a></li>
+    <li><a href="#viewlink">6. View link สำหรับ HR</a></li>
+    <li><a href="#scoring">7. โครงผลคะแนน (scoring / CEFR / MBTI)</a></li>
+    <li><a href="#ttl">8. ตาราง TTL + status</a></li>
+    <li><a href="#checklist">9. Checklist + ของที่ต้องถาม</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ -->
+<section id="tldr">
+  <h2>0. TL;DR — Empeo ต้องทำอะไรบ้าง</h2>
+  <div class="card">
+    <p>ระบบเป็น <strong>1 container</strong> มี gateway (<code>:3000</code>) แยก path ให้ 2 engine ใช้ DB เดียวกัน
+       — <code>/english/*</code> และ <code>/mbti/*</code>. Empeo คุยแบบ <strong>server-to-server</strong> ไม่ยุ่งกับหน้าเว็บข้อสอบ:</p>
+    <ol>
+      <li><strong>POST สร้างการสอบ</strong> → เก็บ <code>attemptId</code> + ส่ง <code>launchUrl</code> ให้พนักงาน</li>
+      <li>พนักงานเปิดลิงก์ทำข้อสอบ → ระบบ score + เก็บผลเอง <span class="muted small">(Empeo ไม่ต้องทำอะไร)</span></li>
+      <li><strong>สร้าง webhook endpoint 1 ตัว</strong> รอรับผล → verify ลายเซ็น → upsert → ตอบ 2xx</li>
+    </ol>
+    <p class="small muted">โค้ด business logic จริง:
+       English <code>apps/english/server/src/routes/attempts.js</code> + <code>webhook.js</code> ·
+       MBTI <code>apps/mbti/server/app.js</code> + <code>assessmentService.js</code> + <code>webhook.js</code></p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="shared">
+  <h2>1. กติกาที่ใช้ร่วมกันทั้ง 2 engine</h2>
+
+  <h3>1.1 Authentication</h3>
+  <div class="card">
+    <p>ทุก endpoint ฝั่ง parent ใช้ header เดียวกัน — <strong>key เดียวใช้ทั้งสอง engine</strong>
+       และเป็น secret เดียวกับที่ใช้ sign/verify webhook:</p>
+    <pre><span class="k">X-API-Key</span>: <span class="s">&lt;PARENT_API_KEY&gt;</span></pre>
+    <p class="small muted">English เช็คใน <code>requireParentAuth</code> (middleware/parentAuth.js) ·
+       MBTI เช็คใน <code>requireParentService</code> <span class="src">app.js:194-208</span>
+       — เทียบแบบ constant-time, ผิด/ไม่ส่ง → <code>401</code></p>
+    <div class="callout info">
+      <strong>หมายเหตุ MBTI:</strong> endpoint <code>/complete</code> (พนักงาน submit คำตอบ) ใช้
+      <strong>Bearer attempt token</strong> ไม่ใช่ X-API-Key — แต่ตัวนี้ browser เป็นคนเรียก ไม่ใช่ Empeo
+      <span class="src">app.js:84-97, 210-215</span>
+    </div>
+  </div>
+
+  <h3>1.2 Identity — คู่ <code>(sourceSystem, externalUserId)</code></h3>
+  <div class="card">
+    <p>ระบุพนักงานด้วย 2 ค่านี้ ส่งค่าเดิมเสมอทั้ง English และ MBTI → upsert ลงตาราง
+       <code>shared.subjects</code> (1 แถวต่อ 1 คน ใช้ร่วมทั้งสอง engine):</p>
+    <ul class="small">
+      <li>English: <code>prisma.subject.upsert</code> <span class="src">attempts.js:159-173</span></li>
+      <li>MBTI: <code>prisma.assessmentSubject.upsert</code> <span class="src">assessmentService.js:20-37</span></li>
+    </ul>
+    <p class="small muted">upsert จะเก็บ snapshot ล่าสุดของ <code>email</code>/<code>displayName</code> โดยไม่ทับด้วย null</p>
+  </div>
+
+  <h3>1.3 Naming — camelCase ชุดเดียว (รายละเอียดจากโค้ดจริง)</h3>
+  <div class="card">
+    <p>หลักการ: ทุก field ที่ Empeo เห็น (request / response / webhook) เป็น <code>camelCase</code>
+       สถานะตอนเสร็จบน wire = <code>"completed"</code> เสมอ — แต่กลไกข้างในต่างกัน:</p>
+    <table class="small">
+      <tr><th style="width:190px"></th><th>English</th><th>MBTI</th></tr>
+      <tr>
+        <td><strong>ภายใน (DB / internal)</strong></td>
+        <td>snake_case ทั้งหมด (<code>correct_total</code>, <code>submitted_at</code>, status <code>submitted</code>)</td>
+        <td>camelCase ทั้ง stack (<code>completedAt</code>, <code>mbtiCode</code>) — ไม่ต้อง map</td>
+      </tr>
+      <tr>
+        <td><strong>map ที่ขอบ parent</strong></td>
+        <td><code>toParentAttempt()</code> แปลง key + <code>parentStatus()</code> แปลงเฉพาะ
+            <code>submitted</code>→<code>completed</code> <span class="src">attempts.js:53-79</span></td>
+        <td>ไม่มี layer แปลง — <code>toResultRecord()</code> เป็น camelCase อยู่แล้ว
+            <span class="src">assessmentService.js:220-243</span></td>
+      </tr>
+      <tr>
+        <td><strong>Request body ขาเข้า</strong></td>
+        <td>camelCase + รับ <strong>snake_case เป็น alias เงียบ ๆ</strong>
+            (<code>body.paperId ?? body.paper_id</code> ทุก field) <span class="src">attempts.js:134-144</span></td>
+        <td><strong>camelCase เท่านั้น</strong> — <code>validateSubjectInput()</code> เช็ค
+            <code>sourceSystem</code>/<code>externalUserId</code> ตรงตัว ไม่มี alias
+            <span class="src">assessmentService.js:205-209</span></td>
+      </tr>
+      <tr>
+        <td><strong>Query param บน URL ที่ mint ให้ browser</strong></td>
+        <td>launch: <code>?t=</code> · view: <code>?view_token=</code>
+            (รับ legacy <code>?vt=</code> ด้วย <span class="src">attempts.js:385</span>)</td>
+        <td>launch: <code>?attempt_id=&amp;attempt_token=</code> · view: <code>?view_token=</code>
+            <span class="src">assessmentService.js:55-57,158</span></td>
+      </tr>
+      <tr>
+        <td><strong>Webhook headers</strong></td>
+        <td colspan="2"><code>X-Signature</code> + <code>X-Attempt-Id</code> — เหมือนกันเป๊ะทั้งสอง engine</td>
+      </tr>
+    </table>
+    <div class="callout info" style="margin-bottom:0">
+      <strong>ข้อสังเกต:</strong> query param ฝั่ง <em>browser</em> เป็น snake_case ทั้งคู่
+      (<code>view_token</code>, <code>attempt_id</code>) — กติกา camelCase ใช้กับ
+      <em>field ใน JSON body</em> ที่ Empeo รับ-ส่งเท่านั้น ·
+      และ endpoint ฝั่ง candidate/admin ของ English (เช่น <code>GET /attempts/:id</code>)
+      ยังตอบ snake_case (<code>rowToAttempt()</code> <span class="src">attempts.js:27-48</span>)
+      — อย่าเอา shape จาก endpoint พวกนั้นมาเขียน DTO ฝั่ง Empeo
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="create">
+  <h2>2. สร้างการสอบ + รับ <code>launchUrl</code></h2>
+
+  <div class="enginerow">
+    <!-- ENGLISH -->
+    <div class="enginecol">
+      <span class="label en">English</span>
+      <div class="endpoint">
+        <div class="ep-head">
+          <span class="badge post">POST</span>
+          <code class="path">/english/api/sessions</code>
+          <span class="tag auth">X-API-Key</span>
+        </div>
+        <div class="ep-body">
+          <h3 style="margin-top:8px">Request <span class="src">attempts.js:131-145</span></h3>
+<pre>{
+  <span class="k">"paperId"</span>: <span class="s">"&lt;uuid&gt;"</span>,            <span class="c">// required → 400 ถ้าไม่มี</span>
+  <span class="k">"sourceSystem"</span>: <span class="s">"empeo"</span>,        <span class="c">// default "english"</span>
+  <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,    <span class="c">// nullable</span>
+  <span class="k">"email"</span>: <span class="s">"a@company.co.th"</span>,     <span class="c">// optional</span>
+  <span class="k">"displayName"</span>: <span class="s">"สมชาย ใจดี"</span>,    <span class="c">// optional</span>
+  <span class="k">"callbackUrl"</span>: <span class="s">"https://.../hook"</span>,<span class="c">// แนะนำให้ส่ง</span>
+  <span class="k">"timeLimitMin"</span>: <span class="n">50</span>               <span class="c">// optional</span>
+}</pre>
+          <h3>Response <code>201</code> <span class="src">attempts.js:209-214</span></h3>
+<pre>{
+  <span class="k">"attempt"</span>: {
+    <span class="k">"id"</span>: <span class="hl">"&lt;uuid&gt;"</span>,            <span class="c">// ★ เก็บค่านี้</span>
+    <span class="k">"paperId"</span>: <span class="s">"&lt;uuid&gt;"</span>,
+    <span class="k">"subjectId"</span>: <span class="s">"&lt;uuid|null&gt;"</span>,
+    <span class="k">"sourceSystem"</span>: <span class="s">"empeo"</span>,
+    <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,
+    <span class="k">"status"</span>: <span class="s">"pending"</span>,
+    <span class="k">"correctTotal"</span>: <span class="b">null</span>,    <span class="c">// ว่างจนกว่า submit</span>
+    <span class="k">"maxTotal"</span>: <span class="b">null</span>,
+    <span class="k">"cefrLevel"</span>: <span class="b">null</span>,
+    <span class="k">"cefrLabel"</span>: <span class="b">null</span>,
+    <span class="k">"result"</span>: <span class="b">null</span>,
+    <span class="k">"timeLimitMin"</span>: <span class="n">50</span>,
+    <span class="k">"startedAt"</span>: <span class="b">null</span>,
+    <span class="k">"completedAt"</span>: <span class="b">null</span>,
+    <span class="k">"expiresAt"</span>: <span class="b">null</span>     <span class="c">// ตั้งตอน consume token</span>
+  },
+  <span class="k">"launchToken"</span>: <span class="s">"&lt;base64url&gt;"</span>,
+  <span class="k">"launchTokenExpiresAt"</span>: <span class="s">"...Z"</span>,
+  <span class="k">"launchUrl"</span>: <span class="hl">"&lt;base&gt;/english/exam?t=..."</span>  <span class="c">// ★</span>
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- MBTI -->
+    <div class="enginecol">
+      <span class="label mb">MBTI</span>
+      <div class="endpoint">
+        <div class="ep-head">
+          <span class="badge post">POST</span>
+          <code class="path">/mbti/api/v1/assessment-attempts</code>
+          <span class="tag auth">X-API-Key</span>
+        </div>
+        <div class="ep-body">
+          <h3 style="margin-top:8px">Request <span class="src">assessmentService.js:205-209</span></h3>
+<pre>{
+  <span class="k">"sourceSystem"</span>: <span class="s">"empeo"</span>,        <span class="c">// required</span>
+  <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,    <span class="c">// required (ทั้งคู่ขาดไม่ได้)</span>
+  <span class="k">"email"</span>: <span class="s">"a@company.co.th"</span>,     <span class="c">// optional</span>
+  <span class="k">"displayName"</span>: <span class="s">"สมชาย ใจดี"</span>,    <span class="c">// optional</span>
+  <span class="k">"callbackUrl"</span>: <span class="s">"https://.../hook"</span> <span class="c">// optional</span>
+}
+<span class="c">// ขาด sourceSystem/externalUserId → 400</span></pre>
+          <h3>Response <code>201</code> <span class="src">assessmentService.js:59-69</span></h3>
+<pre>{
+  <span class="k">"id"</span>: <span class="hl">"&lt;uuid&gt;"</span>,              <span class="c">// ★ attemptId — เก็บค่านี้</span>
+  <span class="k">"attemptToken"</span>: <span class="s">"&lt;opaque&gt;"</span>,    <span class="c">// browser ใช้ต่อ ไม่ต้องเก็บ</span>
+  <span class="k">"userId"</span>: <span class="s">"emp-001"</span>,
+  <span class="k">"subjectId"</span>: <span class="s">"&lt;uuid&gt;"</span>,
+  <span class="k">"status"</span>: <span class="s">"started"</span>,
+  <span class="k">"expiresAt"</span>: <span class="s">"...Z"</span>,         <span class="c">// attempt อายุ 120 นาที</span>
+  <span class="k">"launchUrl"</span>: <span class="hl">"&lt;base&gt;/mbti?attempt_id=...&amp;attempt_token=..."</span>  <span class="c">// ★</span>
+}</pre>
+          <p class="small muted">ต่างจาก English: ไม่มี <code>launchToken</code> แยก
+            (token ฝังใน <code>launchUrl</code> เลย) และ status เริ่มที่ <code>"started"</code> ไม่ใช่ <code>"pending"</code></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <strong>เก็บ <code>attemptId</code> ผูกกับพนักงานทันที</strong> — webhook ผลสอบ (ขั้น 3)
+    และ view-link อ้างอิงด้วย id นี้ · English อ่าน id จาก <code>response.attempt.id</code> ·
+    MBTI อ่านจาก <code>response.id</code> (top-level)
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="webhook">
+  <h2>3. Webhook — body จริงที่ POST กลับ Empeo</h2>
+  <p>พอพนักงานสอบเสร็จ ระบบ <strong>fire-and-forget</strong> POST ผลไปที่ <code>callbackUrl</code>.
+     ทั้งสอง engine แชร์ envelope เดียวกัน — ต่างกันแค่ field ของ <code>result</code> และ extra fields ของ English</p>
+
+  <h3>3.1 English <span class="eng">— ส่งตอน submit เสร็จ</span> <span class="src">webhook.js:57-73</span></h3>
+<pre>{
+  <span class="k">"attemptId"</span>: <span class="s">"&lt;uuid&gt;"</span>,
+  <span class="k">"paperId"</span>: <span class="s">"&lt;uuid&gt;"</span>,          <span class="c">// english-only extra</span>
+  <span class="k">"subjectId"</span>: <span class="s">"&lt;uuid|null&gt;"</span>,   <span class="c">// null ถ้าเป็น anonymous walk-in</span>
+  <span class="k">"sourceSystem"</span>: <span class="s">"empeo"</span>,
+  <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,
+  <span class="k">"status"</span>: <span class="s">"completed"</span>,         <span class="c">// hardcode "completed" (webhook.js:65)</span>
+  <span class="k">"completedAt"</span>: <span class="s">"2026-06-03T10:15:00.000Z"</span>,
+  <span class="k">"correctTotal"</span>: <span class="n">38</span>,             <span class="c">// english-only extra</span>
+  <span class="k">"maxTotal"</span>: <span class="n">50</span>,                 <span class="c">// เต็ม 50 (full) / 20 (short)</span>
+  <span class="k">"cefrLevel"</span>: <span class="n">4</span>,                 <span class="c">// band ตัวเลข (ดู §7)</span>
+  <span class="k">"cefrLabel"</span>: <span class="s">"Advanced"</span>,
+  <span class="k">"result"</span>: {                       <span class="c">// จาก scoreAnswers() (scoring.js)</span>
+    <span class="k">"parts"</span>: [
+      { <span class="k">"id"</span>: <span class="n">1</span>, <span class="k">"title"</span>: <span class="s">"Photographs"</span>, <span class="k">"section"</span>: <span class="s">"Listening"</span>, <span class="k">"correct"</span>: <span class="n">5</span>, <span class="k">"total"</span>: <span class="n">6</span> }
+      <span class="c">// ... part 2-7 (section เป็น "Listening" หรือ "Reading" เท่านั้น)</span>
+    ],
+    <span class="k">"skills"</span>: {
+      <span class="k">"listening"</span>:  { <span class="k">"correct"</span>: <span class="n">20</span>, <span class="k">"total"</span>: <span class="n">25</span> },
+      <span class="k">"vocabulary"</span>: { <span class="k">"correct"</span>: <span class="n">6</span>,  <span class="k">"total"</span>: <span class="n">8</span> },
+      <span class="k">"grammar"</span>:    { <span class="k">"correct"</span>: <span class="n">5</span>,  <span class="k">"total"</span>: <span class="n">7</span> },
+      <span class="k">"reading"</span>:    { <span class="k">"correct"</span>: <span class="n">7</span>,  <span class="k">"total"</span>: <span class="n">10</span> },
+      <span class="k">"total"</span>:      { <span class="k">"correct"</span>: <span class="n">38</span>, <span class="k">"total"</span>: <span class="n">50</span> }
+    }
+  },
+  <span class="k">"engineVersion"</span>: <span class="s">"1.0"</span>            <span class="c">// const ENGINE_VERSION (webhook.js:8)</span>
+}</pre>
+
+  <h3>3.2 MBTI <span class="eng">— ส่งตอน /complete</span> <span class="src">webhook.js:53-70</span></h3>
+<pre>{
+  <span class="k">"attemptId"</span>: <span class="s">"&lt;uuid&gt;"</span>,
+  <span class="k">"subjectId"</span>: <span class="s">"&lt;uuid&gt;"</span>,         <span class="c">// ไม่มี paperId (ต่างจาก English)</span>
+  <span class="k">"sourceSystem"</span>: <span class="s">"empeo"</span>,
+  <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,
+  <span class="k">"status"</span>: <span class="s">"completed"</span>,
+  <span class="k">"completedAt"</span>: <span class="s">"2026-06-03T10:20:00.000Z"</span>,
+  <span class="k">"result"</span>: {                       <span class="c">// แต่ละ field parse จาก *_json column</span>
+    <span class="k">"code"</span>: <span class="s">"ISTJ"</span>,                <span class="c">// ★ MBTI code</span>
+    <span class="k">"softCode"</span>: <span class="s">"I · S · T · J"</span>,    <span class="c">// แกนก้ำกึ่งแสดงเช่น "E/I"</span>
+    <span class="k">"axes"</span>: {
+      <span class="k">"EI"</span>: { <span class="k">"winner"</span>: <span class="s">"I"</span>, <span class="k">"leftPercent"</span>: <span class="n">35</span>, <span class="k">"rightPercent"</span>: <span class="n">65</span>,
+              <span class="k">"dominantPercent"</span>: <span class="n">65</span>, <span class="k">"confidence"</span>: <span class="s">"clear"</span>, <span class="k">"isMidzone"</span>: <span class="b">false</span> }
+      <span class="c">// "SN", "TF", "JP" โครงเดียวกัน</span>
+    },
+    <span class="k">"bars"</span>:       { <span class="k">"EI"</span>: <span class="n">35</span>, <span class="k">"SN"</span>: <span class="n">60</span>, <span class="k">"TF"</span>: <span class="n">70</span>, <span class="k">"JP"</span>: <span class="n">75</span> },
+    <span class="k">"confidence"</span>: { <span class="k">"EI"</span>: <span class="s">"clear"</span>, <span class="k">"SN"</span>: <span class="s">"slight"</span>, <span class="k">"TF"</span>: <span class="s">"clear"</span>, <span class="k">"JP"</span>: <span class="s">"veryClear"</span> },
+    <span class="k">"midzones"</span>:   [],                <span class="c">// แกนที่ชี้ขาดไม่ได้ เช่น ["EI"]</span>
+    <span class="k">"facets"</span>:     { <span class="k">"deepFocus"</span>: <span class="n">1.8</span>, <span class="k">"concrete"</span>: <span class="n">2.4</span> }
+  },
+  <span class="k">"engineVersion"</span>: <span class="s">"1.0"</span>
+}</pre>
+  <p class="small muted">ทั้งสอง engine <strong>ไม่ส่งคำตอบรายข้อ</strong> ใน webhook (ตั้งใจตัดออก) ·
+    MBTI <code>result</code> มี 7 keys: <code>code, softCode, axes, bars, confidence, midzones, facets</code></p>
+</section>
+
+<!-- ============================================================ -->
+<section id="verify">
+  <h2>4. Verify ลายเซ็น + กติกาฝั่ง Empeo</h2>
+
+  <h3>4.1 Headers ที่ส่งมาทุกครั้ง</h3>
+  <p class="small muted">English <span class="src">webhook.js:85-90</span> · MBTI <span class="src">webhook.js:82-86</span> — เหมือนกันเป๊ะ</p>
+<pre><span class="k">Content-Type</span>: application/json
+<span class="k">X-Signature</span>: sha256=&lt;hex&gt;     <span class="c">// HMAC-SHA256(rawBody, PARENT_API_KEY), lowercase hex</span>
+<span class="k">X-Attempt-Id</span>: &lt;attempt id&gt;</pre>
+  <p class="small muted">วิธี sign ในโค้ด (เหมือนกันทั้งสอง):
+    <code>'sha256=' + createHmac('sha256', secret).update(body).digest('hex')</code>
+    โดย <code>body = JSON.stringify(payload)</code> — ต้อง HMAC จาก <strong>body ดิบตัวเดียวกัน</strong></p>
+
+  <h3>4.2 กติกา 3 ข้อที่ endpoint ฝั่ง Empeo ต้องทำ</h3>
+  <div class="card">
+    <p><strong>① Verify ก่อนเชื่อ</strong> — HMAC จาก raw body (ก่อน parse JSON) เทียบแบบ timing-safe:</p>
+<pre><span class="c">// Node.js / Express</span>
+app.post(<span class="s">'/api/webhooks/exam-results'</span>,
+  express.raw({ type: <span class="s">'application/json'</span> }),        <span class="c">// ← ต้องได้ body ดิบ</span>
+  (req, res) =&gt; {
+    const expected = <span class="s">'sha256='</span> + crypto.createHmac(<span class="s">'sha256'</span>, PARENT_API_KEY)
+                                       .update(req.body).digest(<span class="s">'hex'</span>);
+    const ok = crypto.timingSafeEqual(Buffer.from(expected),
+                 Buffer.from(req.headers[<span class="s">'x-signature'</span>] || <span class="s">''</span>));
+    if (!ok) return res.status(<span class="n">401</span>).end();
+    const payload = JSON.parse(req.body);
+    <span class="c">// ② upsert ด้วย payload.attemptId ... ③ ตอบ 200 ให้เร็ว</span>
+    res.status(<span class="n">200</span>).end();
+  });</pre>
+<pre><span class="c">// C# / .NET — verify เหมือนกัน</span>
+var key = Encoding.UTF8.GetBytes(parentApiKey);
+using var hmac = new HMACSHA256(key);
+var expected = <span class="s">"sha256="</span> + Convert.ToHexString(
+    hmac.ComputeHash(Encoding.UTF8.GetBytes(rawBody))).ToLowerInvariant();
+if (!CryptographicOperations.FixedTimeEquals(
+        Encoding.UTF8.GetBytes(expected),
+        Encoding.UTF8.GetBytes(receivedSignature)))
+    return Unauthorized();</pre>
+    <p><strong>② Upsert ด้วย <code>attemptId</code> (idempotent)</strong> — retry สูงสุด 5 ครั้ง
+       <span class="small">(English <code>WEBHOOK_MAX_ATTEMPTS</code> <span class="src">webhook.js:7,43</span> ·
+       MBTI <code>config.webhookMaxAttempts</code> <span class="src">webhook.js:42</span>)</span>
+       → อาจได้ payload เดิมซ้ำ ห้าม insert แถวใหม่ทุกรอบ</p>
+    <p><strong>③ ตอบ 2xx ภายใน 8 วินาที</strong>
+       <span class="small">(<code>WEBHOOK_TIMEOUT_MS</code> default 8000 — English <span class="src">webhook.js:6</span> ·
+       MBTI <code>config.webhookTimeoutMs</code> <span class="src">webhook.js:74</span>)</span>
+       งานหนักให้แยกไปทำ background</p>
+  </div>
+  <p class="small muted">สำเร็จแล้วระบบ stamp <code>result_delivered_at</code> / <code>resultDeliveredAt</code>
+     กันส่งซ้ำ (English <span class="src">webhook.js:42,121</span> · MBTI <span class="src">webhook.js:41,113</span>)</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="pull">
+  <h2>5. ช่องทางสำรอง — Pull / Redeliver</h2>
+  <p>webhook ส่งไม่ถึง? ผลยังอยู่ใน DB เสมอ ตามเก็บได้ 2 ทาง:</p>
+  <table>
+    <tr><th style="width:90px">วิธี</th><th>English</th><th>MBTI</th></tr>
+    <tr>
+      <td><strong>Pull</strong></td>
+      <td><code>GET /english/api/subjects/{src}/{uid}/results</code><br>
+          <span class="small muted">เฉพาะ <code>submitted</code>, ใหม่→เก่า <span class="src">attempts.js:567-582</span></span></td>
+      <td><code>GET /mbti/api/v1/subjects/{src}/{uid}/results</code><br>
+          <span class="small muted">เฉพาะ <code>completed</code>, ใหม่→เก่า <span class="src">assessmentService.js:196-203</span></span></td>
+    </tr>
+    <tr>
+      <td><strong>Redeliver</strong></td>
+      <td><code>POST /english/api/attempts/{id}/redeliver</code><br>
+          <span class="small muted"><span class="src">attempts.js:555-562</span></span></td>
+      <td><code>POST /mbti/api/v1/assessment-attempts/{id}/redeliver</code><br>
+          <span class="small muted"><span class="src">app.js:102-110</span></span></td>
+    </tr>
+  </table>
+  <div class="callout info">
+    <strong>Shape ของ pull ไม่เหมือนกันทั้งสอง engine (ต่างจาก webhook ที่ unified):</strong>
+    English คืน attempt แบนราบ (<code>toParentAttempt</code> — โครงเดียวกับ webhook) ·
+    MBTI คืน <code>toResultRecord</code> <span class="src">assessmentService.js:220-243</span>
+    ซึ่งมี field เพิ่ม: <code>id</code> และ <code>attemptId</code> (ค่าเดียวกันทั้งคู่),
+    <code>userId</code>, object <code>user {id, email, name}</code>,
+    <code>source: "service-api"</code> — และ<strong>แถม <code>responses</code> (คำตอบรายข้อดิบ)
+    มาด้วย</strong> ซึ่ง webhook ตั้งใจตัดออก. ถ้าฝั่ง Empeo เขียน DTO ตัวเดียวรับทั้ง webhook
+    และ pull ให้ ignore field ส่วนเกินพวกนี้ (อย่า fail on unknown fields)
+  </div>
+  <p class="small">ทั้งคู่ตอบ <code>{ "delivered": true|false }</code> — เรียก <code>deliverResult()</code> ตัวเดียวกับ flow ปกติ.
+     <strong>ข้อควรระวัง:</strong> ถ้า <code>delivery_attempts</code> ครบ 5 แล้ว redeliver จะตอบ
+     <code>{delivered:false}</code> (โดนกันที่ <span class="src">webhook.js:43</span> / <span class="src">webhook.js:42</span>)
+     → กรณีนี้ใช้ <strong>pull</strong> แทน</p>
+  <div class="callout">
+    <strong>แนะนำ:</strong> ตั้ง cron ฝั่ง Empeo (เช่นทุก 30 นาที) ไล่หาการสอบที่เปิดไว้นานแต่ผลยังไม่เข้า DB
+    → pull เก็บตก. webhook เป็นทางหลัก (เร็วสุด), pull เป็นตาข่ายกันพลาด
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="viewlink">
+  <h2>6. View link — หน้าผลสอบสำหรับ HR</h2>
+  <p>อยากให้ HR ดูผลเป็นหน้าเว็บ (ไม่ใช่ JSON) ขอลิงก์ชั่วคราวอายุ <strong>15 นาที</strong>.
+     response โครงเดียวกันทั้งสอง engine:</p>
+  <table>
+    <tr><th></th><th>English <span class="src">attempts.js:358-376</span></th><th>MBTI <span class="src">app.js:113-120</span></th></tr>
+    <tr><td>ด้วย attemptId</td>
+        <td><code>POST /english/api/attempts/{id}/view-link</code></td>
+        <td><code>POST /mbti/api/v1/assessment-attempts/{id}/view-link</code></td></tr>
+    <tr><td>ด้วยรหัสพนักงาน<br><span class="small muted">(หยิบผลล่าสุดให้เอง)</span></td>
+        <td><code>POST /english/api/subjects/{src}/{uid}/view-link</code></td>
+        <td><code>POST /mbti/api/v1/subjects/{src}/{uid}/view-link</code></td></tr>
+  </table>
+  <h3>Response <code>201</code> (body ว่าง → ได้):</h3>
+<pre>{
+  <span class="k">"attemptId"</span>: <span class="s">"&lt;uuid&gt;"</span>,
+  <span class="k">"viewUrl"</span>: <span class="s">"&lt;base&gt;/english/result?view_token=..."</span>,   <span class="c">// MBTI: &lt;base&gt;/mbti?view_token=...</span>
+  <span class="k">"expiresAt"</span>: <span class="s">"...Z"</span>
+}
+<span class="c">// แบบ subject-based แถม "completedAt" ของ attempt ล่าสุดมาด้วย</span></pre>
+  <div class="callout warn">
+    <strong>อย่าเก็บ viewUrl ลง DB</strong> — หมดอายุใน 15 นาที. เก็บแค่ <code>attemptId</code>
+    แล้วขอลิงก์ใหม่ทุกครั้งที่ HR จะดู (ขอได้ไม่จำกัด). เปิดลิงก์หมดอายุ → <code>401</code>
+  </div>
+  <p class="small muted">view-link ออกได้เฉพาะ attempt ที่เสร็จแล้ว — ยังไม่เสร็จ → <code>404</code>
+     (English <span class="src">attempts.js:364</span> · MBTI <span class="src">assessmentService.js:151</span>)</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="scoring">
+  <h2>7. โครงผลคะแนน (โค้ดจริง)</h2>
+
+  <h3>7.1 English — scoring <span class="src">scoring.js</span></h3>
+  <p class="small"><code>scoreAnswers()</code> คืน <strong>aggregate เท่านั้น</strong> ไม่มี per-item
+     (กัน brute-force key <span class="src">scoring.js:17-19</span>):</p>
+  <ul class="small">
+    <li><code>parts[]</code> — <code>{ id, title, section, correct, total }</code> · <code>section</code> = <code>"Listening"</code> | <code>"Reading"</code></li>
+    <li><code>skills</code> — 4 ทักษะ <code>listening / vocabulary / grammar / reading</code> + <code>skills.total</code> (บวกรวม <span class="src">scoring.js:76-79</span>)</li>
+    <li>map part→skill: 1-4 Listening, 5 Vocabulary, 6 Grammar, 7 Reading <span class="src">scoring.js:6-14</span></li>
+  </ul>
+
+  <h3>7.2 English — CEFR band <span class="src">cefr.js</span></h3>
+  <p class="small">คิดจากคะแนนดิบ <code>correctTotal</code> ตาราง band ต่างกันตาม variant
+     (แยกจาก<strong>ชื่อ paper</strong> ด้วย <code>paperVariant()</code> ไม่ใช่จำนวนข้อ):</p>
+  <table class="small">
+    <tr><th>variant</th><th>banding (inclusive ทั้งสองฝั่ง)</th></tr>
+    <tr><td><strong>full</strong> (50 ข้อ)</td>
+        <td>0–15 → 1 Novice · 16–24 → 2 Beginner · 25–33 → 3 Intermediate · 34–41 → 4 Advanced · 42–50 → 5 Expert</td></tr>
+    <tr><td><strong>short</strong> (20 ข้อ)</td>
+        <td>0–6 → 1 Beginner · 7–15 → 2 Intermediate · 16–20 → 3 Advanced</td></tr>
+  </table>
+
+  <h3>7.3 MBTI — result fields <span class="src">scoring.js + assessmentService.js</span></h3>
+  <ul class="small">
+    <li><code>code</code> 4 ตัวอักษร · <code>softCode</code> แกนก้ำกึ่งแสดงเป็น <code>"E/I"</code></li>
+    <li><code>confidence</code> 4 ระดับ: <code>midzone</code> (&lt;55%) → <code>slight</code> (55–65) → <code>clear</code> (65–80) → <code>veryClear</code> (80+)</li>
+    <li>backend <strong>re-score จาก raw responses เสมอ</strong> ไม่เชื่อผลจาก browser <span class="src">assessmentService.js:77-82</span></li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="ttl">
+  <h2>8. ตาราง TTL + status vocabulary</h2>
+  <table>
+    <tr><th>สิ่งของ</th><th>อายุ</th><th>หมายเหตุ</th></tr>
+    <tr><td>English — <code>launchToken</code></td><td><strong>30 นาที</strong></td><td>ใช้ครั้งเดียว, <code>LAUNCH_TOKEN_TTL_MIN</code> <span class="src">attempts.js:16</span></td></tr>
+    <tr><td>English — เวลาทำข้อสอบ</td><td>full <strong>50</strong> / short <strong>15</strong> นาที</td><td>นับตอน consume token; override ด้วย <code>timeLimitMin</code></td></tr>
+    <tr><td>MBTI — attempt ทั้งอัน</td><td><strong>120 นาที</strong></td><td><code>attemptTtlMinutes</code> <span class="src">assessmentService.js:15</span></td></tr>
+    <tr><td>View link (ทั้งสอง)</td><td><strong>15 นาที</strong></td><td>ขอใหม่ได้ไม่จำกัด</td></tr>
+    <tr><td>Webhook retry</td><td>สูงสุด <strong>5</strong> ครั้ง · timeout <strong>8</strong> วิ/ครั้ง</td><td>ครบ 5 → pull/redeliver</td></tr>
+  </table>
+  <table class="small">
+    <tr><th>ขั้นตอน</th><th>English (internal → wire)</th><th>MBTI (camelCase ทั้ง stack)</th></tr>
+    <tr><td>สร้างแล้ว</td><td><code>pending</code></td><td><code>started</code></td></tr>
+    <tr><td>กำลังทำ</td><td><code>in_progress</code></td><td><code>started</code></td></tr>
+    <tr><td>เสร็จ (บน wire)</td><td><code>submitted</code> → <strong><code>completed</code></strong></td><td><strong><code>completed</code></strong></td></tr>
+    <tr><td>หมดเวลา/ทิ้ง</td><td><code>expired</code></td><td>(expiresAt เกิน → 410 ตอน complete)</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<section id="checklist">
+  <h2>9. Checklist ฝั่ง Empeo + ของที่ต้องถาม</h2>
+  <ul class="checklist">
+    <li><strong>DB mapping:</strong> เก็บ <code>attemptId</code> + engine + employee ตั้งแต่สร้าง session
+        และคอลัมน์ผล (English: correctTotal/cefr · MBTI: code) + เก็บ <code>result</code> ทั้งก้อนเป็น JSON</li>
+    <li><strong>Webhook endpoint 1 ตัว:</strong> รับ raw body → verify <code>X-Signature</code> → upsert ด้วย <code>attemptId</code> → ตอบ 2xx เร็ว</li>
+    <li><strong><code>PARENT_API_KEY</code> ฝั่ง server เท่านั้น</strong> — ใช้ทั้งเรียก API และ verify webhook ห้ามอยู่ใน frontend</li>
+    <li><strong>(แนะนำ) cron เก็บตก:</strong> ไล่การสอบที่ยังไม่มีผล → pull / redeliver</li>
+  </ul>
+  <div class="callout info">
+    <strong>ของที่ต้องถามภูริ:</strong> Base URL แต่ละ environment ·
+    <code>PARENT_API_KEY</code> แต่ละ environment (ส่งผ่านช่องทางปลอดภัย) ·
+    <code>paperId</code> ของชุดข้อสอบ English (full / short)
+  </div>
+
+  <h3>ลิงก์ในระบบ + เครื่องมือ</h3>
+  <table class="small">
+    <tr><th>อะไร</th><th>Path</th></tr>
+    <tr><td>Swagger — English</td><td><code>/english/api/docs</code></td></tr>
+    <tr><td>Swagger — MBTI</td><td><code>/mbti/api/docs</code></td></tr>
+    <tr><td>Health รวม</td><td><code>/api/health</code> → <code>{"status":"ok","engines":{...}}</code></td></tr>
+    <tr><td>Postman collection</td><td><code>postman-api-for-parent/</code> (ตัวแปร <code>{{base}}</code> + <code>{{parent_api_key}}</code>)</td></tr>
+  </table>
+
+  <footer>
+    เอกสารนี้ดึง body จากโค้ดจริง ณ มิถุนายน 2026 — เลขบรรทัด <span class="src">file:line</span> อ้างอิงไฟล์ในโปรเจกต์.
+    หาก field ไม่ตรง ให้ยึด Swagger ของ environment นั้น ๆ เป็นหลัก · คำถามเพิ่มเติม: ถามภูริ
+  </footer>
+</section>
+
+</div>
+</body>
+</html>

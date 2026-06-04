@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Icon, Mascot } from '../components.jsx';
 import { getResultType } from '../lib/resultCatalog.js';
-import { AXIS_POLES, CONFIDENCE_LABELS, overrideScoreCode, scoreAnswers } from '../lib/scoring.js';
+import { AXIS_POLES, overrideScoreCode, scoreAnswers } from '../lib/scoring.js';
 
 const TYPE_COLOR_THEMES = {
   purple: { types: ['INTJ', 'INTP', 'ENTJ', 'ENTP'] },
@@ -17,7 +17,7 @@ export function Result({ user = {}, answers = {}, resultRecord, resultCodeOverri
   }, [answers, resultCodeOverride]);
 
   const score = resultRecord?.result || localScore;
-  const { code, axes, midzones } = score;
+  const { code, axes } = score;
   const type = getResultType(code);
   const colorTheme = getTypeColorTheme(type.code);
   const userName = user.name || 'คุณ';
@@ -27,18 +27,17 @@ export function Result({ user = {}, answers = {}, resultRecord, resultCodeOverri
 
       <div className="result-report-shell">
         <aside className="result-report-sidebar">
-          <ResultQuickCard type={type} />
           <nav className="result-report-nav" aria-label="Result sections">
-            <a href="#snapshot">ภาพรวม</a>
-            <a href="#axes">สมดุลบุคลิกภาพ</a>
-            <a href="#manager-guide">แนวทางทำงานร่วมกัน</a>
-            <a href="#growth">การเติบโต</a>
+            <a href="#snapshot"><Icon name="eye" size={16} />ภาพรวม</a>
+            <a href="#axes"><Icon name="target" size={16} />สมดุลบุคลิกภาพ</a>
+            <a href="#manager-guide"><Icon name="users" size={16} />แนวทางทำงานร่วมกัน</a>
+            <a href="#growth"><Icon name="sparkles" size={16} />การเติบโต</a>
           </nav>
         </aside>
 
         <main className="result-report-main">
           <ResultStorySection id="snapshot" userName={userName} type={type} />
-          <ResultAxesSection id="axes" axes={axes} midzones={midzones} />
+          <ResultAxesSection id="axes" axes={axes} />
           <ResultManagerSection id="manager-guide" userName={userName} type={type} />
           <ResultGrowthSection id="growth" type={type} />
         </main>
@@ -75,18 +74,6 @@ function ResultReportHero({ type }) {
   );
 }
 
-function ResultQuickCard({ type }) {
-  return (
-    <section className="result-quick-card">
-      <div className="result-quick-mascot">
-        <Mascot name={type.mascot} size={86} />
-      </div>
-      <h2>{type.code}</h2>
-      <p>{type.style}</p>
-    </section>
-  );
-}
-
 function getTypeColorTheme(code) {
   const key = Object.keys(TYPE_COLOR_THEMES).find((themeKey) =>
     TYPE_COLOR_THEMES[themeKey].types.includes(code)
@@ -112,7 +99,7 @@ function ResultStorySection({ id, userName, type }) {
   );
 }
 
-function ResultAxesSection({ id, axes, midzones }) {
+function ResultAxesSection({ id, axes }) {
   return (
     <ResultReportSection id={id} number="02" title="สมดุลบุคลิกภาพ" kicker="Personality scales">
       <div className="result-axis-panel">
@@ -120,15 +107,6 @@ function ResultAxesSection({ id, axes, midzones }) {
           <ResultAxisRow key={axisKey} axisKey={axisKey} axisResult={axisResult} pos={i} />
         ))}
       </div>
-      {midzones.length > 0 && (
-        <div className="result-midzone-note">
-          <Icon name="shield" size={18} />
-          <div>
-            <strong>ผลบางแกนยังไม่ชัดมาก</strong>
-            <p>{midzones.map(a => `${a[0]}/${a[1]}`).join(', ')} อยู่ใกล้กลาง แปลว่าคุณอาจใช้ได้ทั้งสองฝั่งตามสถานการณ์</p>
-          </div>
-        </div>
-      )}
     </ResultReportSection>
   );
 }
@@ -143,7 +121,6 @@ function ResultAxisRow({ axisKey, axisResult, pos }) {
   const dominantCode = dominantLeft ? leftCode : rightCode;
   const dominantPct = dominantLeft ? leftPct : rightPct;
   const dominantPole = poles[dominantCode] || {};
-  const confidence = CONFIDENCE_LABELS[axisResult.confidence] || {};
 
   return (
     <article className={`result-axis-row pos-${pos}`}>
@@ -151,16 +128,14 @@ function ResultAxisRow({ axisKey, axisResult, pos }) {
         <span className={dominantLeft ? 'is-dominant' : 'is-subdued'}><strong className={`mbti-letter pos-${pos}`}>{leftCode}</strong>{poles[leftCode]?.th}</span>
         <span className={dominantLeft ? 'is-subdued' : 'is-dominant'}><strong className={`mbti-letter pos-${pos}`}>{rightCode}</strong>{poles[rightCode]?.th}</span>
       </div>
-      <div className="result-axis-track" aria-hidden="true">
+      <div className="result-axis-track">
         <span className="result-axis-mid"></span>
         <span
-          className="result-axis-fill"
+          className={`result-axis-fill ${dominantLeft ? 'fill-left' : 'fill-right'}`}
           style={dominantLeft ? { left: 0, width: `${leftPct}%` } : { right: 0, width: `${rightPct}%` }}
-        ></span>
-      </div>
-      <div className="result-axis-caption">
-        <strong>{dominantCode} เอน {dominantPct}%</strong>
-        {confidence.th && <span className="result-axis-confidence">{confidence.th}</span>}
+        >
+          <span className="result-axis-pct">{dominantPct}%</span>
+        </span>
       </div>
       {dominantPole.hint && <p className="result-axis-hint">{dominantPole.hint}</p>}
     </article>

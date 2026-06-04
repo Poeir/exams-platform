@@ -169,28 +169,16 @@ button { font-family: inherit; }
   color: var(--color-charcoal);
   letter-spacing: -0.01em;
 }
-.appnav-logo-dot {
-  width: 28px; height: 28px;
-  border-radius: 999px;
-  background: var(--color-eerie-black);
-  display: inline-flex; align-items: center; justify-content: center;
-  position: relative;
-  overflow: hidden;
+.appnav-logo-mark {
+  height: 26px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+  object-fit: contain;
 }
-.appnav-logo-dot::before {
-  content: '';
-  position: absolute;
-  inset: 6px;
-  border-radius: 999px;
-  background: var(--mascot-orange);
-}
-.appnav-logo-dot::after {
-  content: '';
-  position: absolute;
-  width: 10px; height: 10px;
-  border-radius: 999px;
-  background: var(--color-white);
-  top: 7px; right: 6px;
+.appnav-logo-pipe {
+  color: var(--color-porpoise);
+  font-weight: 400;
 }
 .appnav-spacer { flex: 1; }
 .appnav-link {
@@ -2375,79 +2363,12 @@ button { font-family: inherit; }
   flex-direction: column;
   gap: 14px;
 }
-.result-quick-card,
 .result-report-nav,
 .result-sidebar-actions {
   background: var(--color-white);
   border: 1px solid #E7E9EF;
   border-radius: 12px;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
-}
-.result-quick-card {
-  padding: 18px;
-}
-.result-quick-mascot {
-  width: 96px;
-  height: 96px;
-  margin: 0 auto 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--result-surface);
-}
-.result-quick-card h2 {
-  font: 700 28px/34px var(--font-sans);
-  color: var(--color-charcoal);
-  margin: 0;
-  text-align: center;
-}
-.result-quick-card > p {
-  font: 600 14px/20px var(--font-sans);
-  color: var(--result-primary-strong);
-  margin: 2px 0 14px;
-  text-align: center;
-}
-.result-quick-confidence {
-  border-radius: 10px;
-  padding: 10px 12px;
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  margin-bottom: 14px;
-}
-.result-quick-confidence span {
-  display: block;
-  font: 600 11px/16px var(--font-sans);
-  color: var(--color-porpoise);
-}
-.result-quick-confidence strong {
-  display: block;
-  font: 700 18px/24px var(--font-sans);
-  color: var(--color-charcoal);
-}
-.result-quick-confidence.conf-high { background: #ECFDF5; border-color: #BBF7D0; }
-.result-quick-confidence.conf-medium { background: #FFF7ED; border-color: #FED7AA; }
-.result-quick-card ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.result-quick-card li {
-  display: grid;
-  gap: 2px;
-  padding-top: 10px;
-  border-top: 1px solid #EEF0F4;
-}
-.result-quick-card li span {
-  font: 600 12px/17px var(--font-sans);
-  color: var(--color-porpoise);
-}
-.result-quick-card li strong {
-  font: 700 13px/19px var(--font-sans);
-  color: var(--color-charcoal);
 }
 .result-report-nav {
   padding: 8px;
@@ -2457,12 +2378,17 @@ button { font-family: inherit; }
 .result-report-nav a {
   display: flex;
   align-items: center;
+  gap: 10px;
   min-height: 38px;
   border-radius: 8px;
   padding: 8px 10px;
   color: var(--color-anchor);
   font: 600 13px/18px var(--font-sans);
   text-decoration: none;
+}
+.result-report-nav a svg {
+  flex-shrink: 0;
+  color: var(--result-primary-strong);
 }
 .result-report-nav a:hover {
   background: var(--result-surface);
@@ -2546,8 +2472,7 @@ button { font-family: inherit; }
   color: var(--color-charcoal);
 }
 .result-profile-highlight,
-.result-reminder,
-.result-midzone-note {
+.result-reminder {
   border-radius: 12px;
   background: var(--result-surface);
   border: 1px solid var(--result-border);
@@ -2612,8 +2537,7 @@ button { font-family: inherit; }
   padding: 18px;
   background: #FCFCFD;
 }
-.result-axis-row-head,
-.result-axis-caption {
+.result-axis-row-head {
   display: flex;
   justify-content: space-between;
   gap: 18px;
@@ -2639,10 +2563,10 @@ button { font-family: inherit; }
   font-weight: 500;
 }
 .result-axis-track {
-  height: 10px;
+  height: 22px;
   border-radius: 999px;
   background: #E8EDF4;
-  margin: 14px 0 10px;
+  margin: 14px 0 4px;
   position: relative;
   overflow: hidden;
 }
@@ -2661,50 +2585,25 @@ button { font-family: inherit; }
   bottom: 0;
   border-radius: 999px;
   background: var(--axis-color, #3B82F6);
+  display: flex;
+  align-items: center;
+}
+.result-axis-fill.fill-left { justify-content: flex-end; padding-right: 10px; }
+.result-axis-fill.fill-right { justify-content: flex-start; padding-left: 10px; }
+.result-axis-pct {
+  font: 700 12px/16px var(--font-sans);
+  color: var(--color-white);
+  white-space: nowrap;
 }
 .result-axis-row.pos-0 { --axis-color: #3B82F6; }
 .result-axis-row.pos-1 { --axis-color: #21CE9B; }
 .result-axis-row.pos-2 { --axis-color: #F05B2F; }
 .result-axis-row.pos-3 { --axis-color: #A855F7; }
-.result-axis-caption {
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-.result-axis-caption strong {
-  border-radius: 999px;
-  background: var(--result-surface);
-  color: var(--result-primary-strong);
-  padding: 6px 10px;
-  font: 700 12px/16px var(--font-sans);
-  white-space: nowrap;
-}
-.result-axis-confidence {
-  border-radius: 999px;
-  background: #EEF2F7;
-  color: var(--color-charcoal);
-  padding: 4px 10px;
-  font: 600 11px/16px var(--font-sans);
-  margin-left: 8px;
-  white-space: nowrap;
-}
 .result-axis-hint {
   margin: 10px 0 0;
   color: var(--color-charcoal);
   opacity: 0.75;
   font: 400 13px/20px var(--font-sans);
-}
-.result-midzone-note p {
-  font: 400 13px/21px var(--font-sans);
-  color: var(--color-lead);
-  margin: 2px 0 0;
-}
-.result-midzone-note {
-  margin-top: 16px;
-}
-.result-midzone-note strong {
-  display: block;
-  font: 700 15px/21px var(--font-sans);
-  color: var(--result-primary-dark);
 }
 .result-manager-intro {
   display: flex;
@@ -2785,10 +2684,8 @@ button { font-family: inherit; }
   .result-report-sidebar {
     position: static;
   }
-  /* Quick card + nav only make sense as a desktop sidebar.
-     The hero already shows mascot + code + role, so hide the
-     redundant card instead of letting it span full width. */
-  .result-quick-card,
+  /* The nav only makes sense as a desktop sidebar — hide it
+     instead of letting it span full width. */
   .result-report-nav {
     display: none;
   }
@@ -3041,8 +2938,6 @@ button { font-family: inherit; }
   .result-axis-row { padding: 14px; }
   .result-axis-row-head { gap: 10px; }
   .result-axis-row-head span { font-size: 13px; }
-  .result-axis-caption { justify-content: flex-start; gap: 8px; }
-  .result-axis-confidence { margin-left: 0; }
 
   .result-info-list ul { grid-template-columns: 1fr; }
   .result-restart-row { margin-top: 24px; }

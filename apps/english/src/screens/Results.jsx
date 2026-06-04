@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ETIcon, ETBtn, ETTopbar } from '../components/Common.jsx';
+import { ETIcon, ETBtn } from '../components/Common.jsx';
 import Eyebrow from '../components/Eyebrow.jsx';
 import { scorePaper } from '../data/examRepo.js';
 import { useExam } from '../state/ExamContext.jsx';
@@ -122,22 +122,38 @@ function CircularGauge({
   );
 }
 
-function SkillCheck({ label }) {
+// White card with the orange accent-bar header used by every panel on the
+// right column of the certificate layout. `meta` is the right-aligned text.
+function PanelCard({ title, meta, children }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: 'var(--fg-2)' }}>
-      <span style={{
-        width: 18, height: 18, borderRadius: 999, flexShrink: 0,
-        background: 'var(--color-primary)', color: '#fff',
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    <section style={{
+      background: '#fff', border: '1px solid var(--gf-cloud-3)', borderRadius: 16,
+      boxShadow: '0 1px 4px rgba(16, 24, 40, 0.04)',
+      padding: '20px 24px 24px',
+    }}>
+      <header style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 12, marginBottom: 18,
       }}>
-        <span style={{ width: 11, height: 11, display: 'inline-flex' }}>{ETIcon.check}</span>
-      </span>
-      {label}
-    </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <span aria-hidden="true" style={{
+            width: 3, height: 16, borderRadius: 2, flexShrink: 0,
+            background: 'var(--color-primary)',
+          }} />
+          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg-1)' }}>{title}</span>
+        </span>
+        {meta && (
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--fg-3)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+            {meta}
+          </span>
+        )}
+      </header>
+      {children}
+    </section>
   );
 }
 
-function CertificateHero({ user, activeLevel, score, maxScore, pct, sections, issuedAt }) {
+function CertificateHero({ user, activeLevel, score, maxScore, pct, issuedAt }) {
   const initials = getInitials(user.name);
   const issued = (issuedAt ? new Date(issuedAt) : new Date())
     .toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -179,17 +195,17 @@ function CertificateHero({ user, activeLevel, score, maxScore, pct, sections, is
       </div>
 
       {/* score gauge */}
-      <div style={{ marginTop: 34, marginBottom: 28 }}>
-        <CircularGauge pct={pct} size={236} stroke={16}>
+      <div style={{ marginTop: 30, marginBottom: 26 }}>
+        <CircularGauge pct={pct} size={188} stroke={14}>
           <span style={{
             fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: 'var(--color-primary)', marginBottom: 2,
           }}>Score</span>
           <span style={{
-            fontSize: 56, fontWeight: 700, color: 'var(--fg-1)',
+            fontSize: 48, fontWeight: 700, color: 'var(--fg-1)',
             letterSpacing: '-0.03em', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
           }}>{score}</span>
-          <span style={{ fontSize: 14, color: 'var(--fg-3)', fontWeight: 600, marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontSize: 13.5, color: 'var(--fg-3)', fontWeight: 600, marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
             / {maxScore}
           </span>
         </CircularGauge>
@@ -205,26 +221,17 @@ function CertificateHero({ user, activeLevel, score, maxScore, pct, sections, is
         <span style={{ width: 15, height: 15, display: 'inline-flex' }}>{ETIcon.trophy}</span>
         Level {activeLevel.level} · {activeLevel.label}
       </div>
-
-      {/* skill checks */}
-      <div style={{ marginTop: 16, display: 'flex', gap: 22, flexWrap: 'wrap', justifyContent: 'center' }}>
-        {sections.map((s) => <SkillCheck key={s.key} label={s.label} />)}
-      </div>
     </div>
   );
 }
 
 function BandReference({ guide, activeLevel }) {
   return (
-    <div style={{ marginTop: 40 }}>
-      <h3 className="gf-h5" style={{ margin: 0, marginBottom: 16, textAlign: 'center' }}>
-        Score Band Reference
-      </h3>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${guide.length}, 1fr)`,
-        gap: 10,
-      }}>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: `repeat(auto-fit, minmax(96px, 1fr))`,
+      gap: 10,
+    }}>
         {guide.map((l) => {
           const state = l.level === activeLevel.level
             ? 'active'
@@ -272,28 +279,30 @@ function BandReference({ guide, activeLevel }) {
             </div>
           );
         })}
-      </div>
     </div>
   );
 }
 
 function SectionGauges({ sections }) {
+  // Deliberately off-brand hues so the gauges read as data, not actions —
+  // and far apart from each other: deep blue (venio) for listening,
+  // teal-green (DS success) for reading.
   const palette = [
-    { color: 'var(--color-primary)', track: 'var(--color-primary-soft)' },
-    { color: 'var(--gf-success)',    track: 'var(--gf-success-soft)' },
+    { color: 'var(--brand-venio)', track: '#D6E4FE' },
+    { color: 'var(--gf-success)',  track: 'var(--gf-success-soft)' },
   ];
   return (
     <div style={{
-      marginTop: 36,
-      display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: 16,
     }}>
       {sections.map((s, i) => {
         const tone = palette[i % palette.length];
         return (
           <div key={s.key} style={{
-            flex: '1 1 200px', maxWidth: 240,
             background: '#fff', border: '1px solid var(--gf-cloud-3)', borderRadius: 12,
-            padding: '22px 16px',
+            padding: '26px 16px',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
           }}>
             <CircularGauge pct={s.pct} size={104} stroke={10} color={tone.color} track={tone.track}>
@@ -314,49 +323,14 @@ function SectionGauges({ sections }) {
   );
 }
 
-function LevelHighlight({ activeLevel }) {
-  return (
-    <div style={{
-      background: 'var(--color-primary-tint)',
-      padding: 24, borderRadius: 12,
-      border: '1px solid var(--color-primary-soft)',
-      marginBottom: 36,
-      display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 20, alignItems: 'flex-start',
-    }}>
-      <span aria-hidden="true" style={{
-        width: 48, height: 48, display: 'inline-flex',
-        alignItems: 'center', justifyContent: 'center',
-        background: '#fff', borderRadius: 12,
-        color: 'var(--color-primary)',
-        border: '1px solid var(--color-primary-soft)',
-      }}>
-        <span style={{ width: 24, height: 24, display: 'inline-flex' }}>{ETIcon.target}</span>
-      </span>
-      <div>
-        <Eyebrow color="var(--color-primary)" style={{ marginBottom: 6 }}>
-          Level {activeLevel.level} · {activeLevel.label}
-        </Eyebrow>
-        <h3 className="gf-h4" style={{ margin: 0, marginBottom: 10 }}>
-          What this level means
-        </h3>
-        <p style={{ fontSize: 15, lineHeight: 1.65, color: 'var(--fg-2)', fontWeight: 500, margin: 0, marginBottom: 10 }}>
-          {activeLevel.desc}
-        </p>
-        <p style={{ fontSize: 15, lineHeight: 1.65, color: 'var(--fg-2)', fontWeight: 500, margin: 0 }}>
-          {activeLevel.advice}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// The full certificate body (hero + band reference + section gauges + level
-// highlight). Shared between the candidate's own Results screen and the
-// parent-site read-only view (src/screens/ResultViewer.jsx) so both render the
-// exact same layout. `skills` is the scored-skills object the server returns
-// ({ listening, vocabulary, grammar, reading, total }). `variant` picks the
-// score-band guide: the full paper bands on the normalized 0–100 score, the
-// short placement paper on raw points out of 20.
+// The full certificate body — two-column dashboard: certificate card on the
+// left, panel cards (section breakdown / score band reference / level
+// explanation) on the right. Shared between the candidate's own Results screen
+// and the parent-site read-only view (src/screens/ResultViewer.jsx) so both
+// render the exact same layout. `skills` is the scored-skills object the
+// server returns ({ listening, vocabulary, grammar, reading, total }).
+// `variant` picks the score-band guide: the full paper bands on the normalized
+// 0–100 score, the short placement paper on raw points out of 20.
 export function ResultCertificate({ user, skills, issuedAt, variant = 'full' }) {
   const isShort = variant === 'short';
   const guide = isShort ? SHORT_LEVEL_GUIDE : LEVEL_GUIDE;
@@ -365,9 +339,10 @@ export function ResultCertificate({ user, skills, issuedAt, variant = 'full' }) 
     : normalizeScore(skills.total.correct, skills.total.total);
   const maxScore = isShort ? skills.total.total : MAX_SCORE;
   const activeLevel = levelFor(guide, score);
+  const levelText = `Level ${activeLevel.level} · ${activeLevel.label}`;
 
-  // Two-section view (matches the certificate's skill checks + gauges). The
-  // reading section rolls up vocabulary + grammar + reading comprehension.
+  // Two-section view for the breakdown gauges. The reading section rolls up
+  // vocabulary + grammar + reading comprehension.
   const readingSection = {
     correct: skills.vocabulary.correct + skills.grammar.correct + skills.reading.correct,
     total:   skills.vocabulary.total   + skills.grammar.total   + skills.reading.total,
@@ -380,25 +355,42 @@ export function ResultCertificate({ user, skills, issuedAt, variant = 'full' }) 
     .map((s) => ({ ...s, pct: pctOf(s.correct, s.total) }));
 
   return (
-    <>
-      <div style={{ maxWidth: 560, margin: '0 auto' }}>
+    <div className="et-cert-layout">
+      {/* certificate card */}
+      <aside className="et-cert-card">
         <CertificateHero
           user={user}
           activeLevel={activeLevel}
           score={score}
           maxScore={maxScore}
           pct={pctOf(skills.total.correct, skills.total.total)}
-          sections={sections}
           issuedAt={issuedAt}
         />
-        <BandReference guide={guide} activeLevel={activeLevel} />
-        <SectionGauges sections={sections} />
+      </aside>
+
+      {/* detail panels */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+        <PanelCard
+          title="Section breakdown"
+          meta={`${skills.total.correct} / ${skills.total.total} correct`}
+        >
+          <SectionGauges sections={sections} />
+        </PanelCard>
+
+        <PanelCard title="Score Band Reference" meta={levelText}>
+          <BandReference guide={guide} activeLevel={activeLevel} />
+        </PanelCard>
+
+        <PanelCard title={`What this level means · ${levelText}`}>
+          <p style={{ fontSize: 15, lineHeight: 1.65, color: 'var(--fg-2)', fontWeight: 500, margin: 0, marginBottom: 10 }}>
+            {activeLevel.desc}
+          </p>
+          <p style={{ fontSize: 15, lineHeight: 1.65, color: 'var(--fg-2)', fontWeight: 500, margin: 0 }}>
+            {activeLevel.advice}
+          </p>
+        </PanelCard>
       </div>
-
-      <div style={{ height: 1, background: 'var(--gf-cloud-3)', margin: '40px 0 32px' }} />
-
-      <LevelHighlight activeLevel={activeLevel} />
-    </>
+    </div>
   );
 }
 
@@ -429,8 +421,7 @@ export default function Results() {
   if (scoreError) {
     return (
       <div className="et et-screen et-screen--white">
-        <ETTopbar crumbs={[{ text: 'Result', strong: true }]} />
-        <div className="et-results"><div className="et-results__inner">
+        <div className="et-results et-results--dim"><div className="et-results__inner" style={{ textAlign: 'center' }}>
           <p style={{ color: 'var(--fg-2)', fontWeight: 600 }}>
             Couldn’t calculate your result. Please try again.
           </p>
@@ -443,8 +434,7 @@ export default function Results() {
   if (!result) {
     return (
       <div className="et et-screen et-screen--white">
-        <ETTopbar crumbs={[{ text: 'Result', strong: true }]} />
-        <div className="et-results"><div className="et-results__inner">
+        <div className="et-results et-results--dim"><div className="et-results__inner" style={{ textAlign: 'center' }}>
           <p style={{ color: 'var(--fg-3)', fontWeight: 600 }}>Calculating your result…</p>
         </div></div>
       </div>
@@ -453,8 +443,6 @@ export default function Results() {
 
   return (
     <div className="et et-screen et-screen--white">
-      <ETTopbar crumbs={[{ text: 'Result', strong: true }]} />
-
       <div className="et-results et-results--dim">
         <div className="et-results__inner">
           <ResultCertificate user={DEFAULT_USER} skills={result.skills} variant={version} />
