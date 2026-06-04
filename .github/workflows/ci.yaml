@@ -1,0 +1,44 @@
+name: "[examo] Build & Update to GitOps 🚀"
+run-name: "[${{ inputs.deploy-environment }}] Build & Deploy 🚀 ${{ inputs.auto-deploy == true && '(Auto)' || '(PR)' }}"
+on:
+  workflow_dispatch:
+    inputs:
+      deploy-environment:
+        description: "Target Environment for GitOps Deployment"
+        required: true
+        default: "UAT"
+        type: choice
+        options:
+          - UAT
+          - PROD
+      auto-deploy:
+        description: "🚀 Auto Deploy (Skip PR Creation)"
+        required: true
+        type: boolean
+        default: false
+jobs:
+  acr-build:
+    uses: GofiveCorp/gofive-gitops/.github/workflows/acr-build.yaml@v4
+    with:
+      environment: "${{ github.event.inputs.deploy-environment }}"
+      image: "examo"
+      tag: "${{ github.event.inputs.deploy-environment }}-${{ github.run_id }}"
+      working_directory: "."
+      dockerfile: Dockerfile
+    secrets:
+      AZURE_ARM_CERTIFICATE: ${{ secrets.AZURE_ARM_CERTIFICATE }}
+      AZURE_ARM_CLIENT_ID: ${{ secrets.AZURE_ARM_CLIENT_ID }}
+      AZURE_ARM_CLIENT_SECRET: ${{ secrets.AZURE_ARM_CLIENT_SECRET }}
+
+  update-gitops:
+    needs: [acr-build]
+    uses: GofiveCorp/gofive-gitops/.github/workflows/update-gitops.yaml@v4
+    with:
+      repository: "examo"
+      application: "examo"
+      application_label: "examo"
+      environment: ${{ github.event.inputs.deploy-environment }}
+      tag: ${{ needs.acr-build.outputs.tag }}
+      skip_pr: ${{ github.event.inputs.auto-deploy == 'true' }}
+    secrets:
+      GH_TOKEN: ${{ secrets.WORKFLOW_AGENT_PAT }}
