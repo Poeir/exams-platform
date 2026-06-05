@@ -146,6 +146,9 @@ router.post('/sessions', requireParentAuth, async (req, res, next) => {
     // along in the launch URL and is carried client-side through the exam, so
     // it never touches the database (see ExamContext.readLaunchAvatar).
     const avatar_url = body.avatarUrl ?? body.avatar_url ?? null;
+    // Candidate job position shown under the name on the certificate. Like the
+    // avatar, it rides the launch URL client-side only and is never persisted.
+    const role = body.role ?? null;
     if (!paper_id) return res.status(400).json({ error: 'paperId is required' });
 
     const paper = await prisma.paper.findUnique({
@@ -214,7 +217,12 @@ router.post('/sessions', requireParentAuth, async (req, res, next) => {
       attempt: toParentAttempt({ ...attempt, subject }),
       launchToken: token,
       launchTokenExpiresAt: expires.toISOString(),
+      // name + role + avatar ride the launch URL as client-side-only identity
+      // (never persisted) so the candidate's own Results certificate can show
+      // who they are — see ExamContext.readLaunch*.
       launchUrl: `${enginePublicUrl()}/exam?t=${encodeURIComponent(token)}`
+        + (display_name ? `&name=${encodeURIComponent(display_name)}` : '')
+        + (role ? `&role=${encodeURIComponent(role)}` : '')
         + (avatar_url ? `&avatar=${encodeURIComponent(avatar_url)}` : ''),
     });
   } catch (err) { next(err); }
@@ -370,9 +378,10 @@ router.post('/attempts/:id/view-link', requireParentAuth, async (req, res, next)
       return res.status(404).json({ error: 'submitted attempt not found' });
     }
 
-    // Optional candidate avatar — baked into the signed token, not persisted.
+    // Optional candidate avatar + role — baked into the signed token, not persisted.
     const avatarUrl = req.body?.avatarUrl ?? req.body?.avatar_url ?? null;
-    const token = createViewToken(attempt.id, { avatarUrl });
+    const role = req.body?.role ?? null;
+    const token = createViewToken(attempt.id, { avatarUrl, role });
     req.log.info('result_view_link_created', { attempt_id: attempt.id });
     res.status(201).json({
       attemptId: attempt.id,
@@ -391,7 +400,7 @@ router.get('/attempts/view', async (req, res, next) => {
   try {
     const verified = verifyViewToken(req.query.view_token || req.query.vt);
     if (!verified) return res.status(401).json({ error: 'view link is invalid or has expired' });
-    const { attemptId, avatarUrl } = verified;
+    const { attemptId, avatarUrl, role } = verified;
 
     const row = await prisma.attempt.findUnique({
       where: { id: attemptId },
@@ -414,6 +423,7 @@ router.get('/attempts/view', async (req, res, next) => {
       sourceSystem: row.subject ? row.subject.source_system : null,
       // Carried inside the (signed) view token, not stored on the attempt.
       avatarUrl,
+      role,
       completedAt: row.submitted_at,
       correctTotal: row.correct_total,
       maxTotal: row.max_total,
@@ -613,9 +623,10 @@ router.post('/subjects/:source_system/:external_user_id/view-link', requireParen
     });
     if (!attempt) return res.status(404).json({ error: 'no submitted attempt for this subject' });
 
-    // Optional candidate avatar — baked into the signed token, not persisted.
+    // Optional candidate avatar + role — baked into the signed token, not persisted.
     const avatarUrl = req.body?.avatarUrl ?? req.body?.avatar_url ?? null;
-    const token = createViewToken(attempt.id, { avatarUrl });
+    const role = req.body?.role ?? null;
+    const token = createViewToken(attempt.id, { avatarUrl, role });
     req.log.info('subject_view_link_created', {
       attempt_id: attempt.id,
       source_system: req.params.source_system,

@@ -457,6 +457,7 @@
   <span class="k">"externalUserId"</span>: <span class="s">"emp-001"</span>,                           <span class="c">// employee id ของ Empeo</span>
   <span class="k">"email"</span>: <span class="s">"somchai@company.co.th"</span>,                     <span class="c">// optional</span>
   <span class="k">"displayName"</span>: <span class="s">"สมชาย ใจดี"</span>,                           <span class="c">// optional</span>
+  <span class="k">"role"</span>: <span class="s">"Software Engineer"</span>,                          <span class="c">// optional — ตำแหน่งงานโชว์ใต้ชื่อในหน้าผลสอบ · ไม่เก็บ DB (ต่อท้าย launchUrl)</span>
   <span class="k">"timeLimitMin"</span>: <span class="n">50</span>,                                    <span class="c">// optional — ไม่ส่งจะใช้ค่าของชุดข้อสอบ (เต็ม 50 / สั้น 15 นาที)</span>
   <span class="k">"avatarUrl"</span>: <span class="s">"https://cdn.empeo.com/avatars/emp-001.jpg"</span>  <span class="c">// optional — รูปโชว์ในหน้าผลสอบ · ไม่เก็บ DB (ต่อท้าย launchUrl) · ต้องเป็น HTTPS เปิดสาธารณะ + โดเมนอยู่ใน CSP</span>
 }</pre>
@@ -507,9 +508,10 @@
       <span class="tag">ขอลิงก์หน้าผลสอบ (อายุ 15 นาที)</span>
     </div>
     <div class="ep-body">
-<pre><span class="c">// body optional — ส่ง avatarUrl เพื่อโชว์รูปในหน้าผลสอบ (ฝังในตัว view_token, ไม่เก็บ DB):</span>
+<pre><span class="c">// body optional — ส่ง avatarUrl / role เพื่อโชว์รูป + ตำแหน่งในหน้าผลสอบ (ฝังในตัว view_token, ไม่เก็บ DB):</span>
 {
-  <span class="k">"avatarUrl"</span>: <span class="s">"https://cdn.empeo.com/avatars/emp-001.jpg"</span>   <span class="c">// optional — HTTPS เปิดสาธารณะ + โดเมนอยู่ใน CSP</span>
+  <span class="k">"avatarUrl"</span>: <span class="s">"https://cdn.empeo.com/avatars/emp-001.jpg"</span>,   <span class="c">// optional — HTTPS เปิดสาธารณะ + โดเมนอยู่ใน CSP</span>
+  <span class="k">"role"</span>: <span class="s">"Software Engineer"</span>                            <span class="c">// optional — ตำแหน่งงานโชว์ใต้ชื่อ</span>
 }
 <span class="c">// Response 201:</span>
 {

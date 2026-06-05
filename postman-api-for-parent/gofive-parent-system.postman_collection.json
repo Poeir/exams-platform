@@ -11,6 +11,7 @@
     { "key": "external_user_id", "value": "emp-001" },
     { "key": "callback_url", "value": "http://localhost:4000/callback" },
     { "key": "avatar_url", "value": "https://i.pravatar.cc/200?u=emp-001" },
+    { "key": "role", "value": "Software Engineer" },
     { "key": "paper_id_full", "value": "" },
     { "key": "paper_id_short", "value": "" },
     { "key": "en_attempt_id", "value": "" },
@@ -73,7 +74,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"paperId\": \"{{paper_id_full}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"sourceSystem\": \"{{source_system}}\",\n  \"email\": \"{{external_user_id}}@gofive.co.th\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\",\n  \"avatarUrl\": \"{{avatar_url}}\"\n}"
+          "raw": "{\n  \"paperId\": \"{{paper_id_full}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"sourceSystem\": \"{{source_system}}\",\n  \"email\": \"{{external_user_id}}@gofive.co.th\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\",\n  \"avatarUrl\": \"{{avatar_url}}\",\n  \"role\": \"{{role}}\"\n}"
         },
         "url": "{{base}}/english/api/sessions"
       },
@@ -105,7 +106,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"paperId\": \"{{paper_id_short}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"sourceSystem\": \"{{source_system}}\",\n  \"email\": \"{{external_user_id}}@gofive.co.th\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\",\n  \"avatarUrl\": \"{{avatar_url}}\"\n}"
+          "raw": "{\n  \"paperId\": \"{{paper_id_short}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"sourceSystem\": \"{{source_system}}\",\n  \"email\": \"{{external_user_id}}@gofive.co.th\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\",\n  \"avatarUrl\": \"{{avatar_url}}\",\n  \"role\": \"{{role}}\"\n}"
         },
         "url": "{{base}}/english/api/sessions"
       },
@@ -193,7 +194,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"avatarUrl\": \"{{avatar_url}}\"\n}"
+          "raw": "{\n  \"avatarUrl\": \"{{avatar_url}}\",\n  \"role\": \"{{role}}\"\n}"
         },
         "url": "{{base}}/english/api/attempts/{{en_attempt_id}}/view-link"
       },
@@ -244,7 +245,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"avatarUrl\": \"{{avatar_url}}\"\n}"
+          "raw": "{\n  \"avatarUrl\": \"{{avatar_url}}\",\n  \"role\": \"{{role}}\"\n}"
         },
         "url": "{{base}}/english/api/subjects/{{source_system}}/{{external_user_id}}/view-link"
       },

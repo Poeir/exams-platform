@@ -60,7 +60,9 @@ export default function ResultViewer() {
             <ResultCertificate
               user={{
                 name: state.data.displayName || state.data.externalUserId || 'Anonymous candidate',
-                position: state.data.paperName || 'English Proficiency Test',
+                // The candidate's job position (carried in the signed view token),
+                // NOT the paper name — that belongs to the result, not the person.
+                position: state.data.role || 'Candidate',
                 avatarUrl: state.data.avatarUrl || null,
               }}
               skills={state.data.result?.skills}

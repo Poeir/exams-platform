@@ -71,9 +71,10 @@ function levelFor(guide, score) {
   return guide.find((l) => score >= l.min && score <= l.max) || guide[0];
 }
 
-// Placeholder. Wire this to the parent-supplied subject identity on the
-// attempt row (external_user_id / display_name snapshot) once plumbed through
-// ExamContext.
+// Fallback identity for anonymous walk-ins (no parent hand-off, so no name /
+// role / avatar in the launch URL). Parent-launched sessions override these
+// with the values carried client-side through ExamContext (launchName /
+// launchRole / launchAvatarUrl).
 const DEFAULT_USER = {
   name: 'Test Candidate',
   position: 'Role',
@@ -395,7 +396,7 @@ export function ResultCertificate({ user, skills, issuedAt, variant = 'full' }) 
 }
 
 export default function Results() {
-  const { exam, answers, attemptId, submitFinal, version, launchAvatarUrl } = useExam();
+  const { exam, answers, attemptId, submitFinal, version, launchAvatarUrl, launchName, launchRole } = useExam();
   // Scoring happens on the server so the answer key never reaches the client.
   // In session mode (parent-launched), submitFinal hits /attempts/:id/submit —
   // server snapshots onto the attempt row and pushes to the parent's callback.
@@ -446,7 +447,11 @@ export default function Results() {
       <div className="et-results et-results--dim">
         <div className="et-results__inner">
           <ResultCertificate
-            user={launchAvatarUrl ? { ...DEFAULT_USER, avatarUrl: launchAvatarUrl } : DEFAULT_USER}
+            user={{
+              name: launchName || DEFAULT_USER.name,
+              position: launchRole || DEFAULT_USER.position,
+              avatarUrl: launchAvatarUrl || DEFAULT_USER.avatarUrl,
+            }}
             skills={result.skills}
             variant={version}
           />

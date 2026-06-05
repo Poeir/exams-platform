@@ -546,6 +546,11 @@ const paths = {
             nullable: true,
             description: 'Candidate avatar shown on the Results screen. NOT persisted — appended to launchUrl (?avatar=) and carried client-side. Must be a publicly loadable HTTPS image on a domain allowed by the gateway CSP img-src.',
           },
+          role: {
+            type: 'string',
+            nullable: true,
+            description: "Candidate's job position shown under their name on the Results certificate. NOT persisted — appended to launchUrl (?role=) and carried client-side.",
+          },
         },
       }),
       responses: {
@@ -705,6 +710,11 @@ const paths = {
             nullable: true,
             description: 'Candidate avatar shown on the read-only result page. Baked into the signed view token (not persisted). Publicly loadable HTTPS image on a CSP-allowed domain.',
           },
+          role: {
+            type: 'string',
+            nullable: true,
+            description: "Candidate's job position shown under their name on the read-only result page. Baked into the signed view token (not persisted).",
+          },
         },
       }, false),
       responses: {
@@ -740,6 +750,7 @@ const paths = {
             externalUserId: { type: 'string', nullable: true },
             sourceSystem: { type: 'string', nullable: true },
             avatarUrl: { type: 'string', format: 'uri', nullable: true, description: 'Carried inside the signed view token (supplied when the link was minted), not stored on the attempt.' },
+            role: { type: 'string', nullable: true, description: "Candidate's job position, carried inside the signed view token (supplied when the link was minted), not stored on the attempt." },
             completedAt: { type: 'string', format: 'date-time', nullable: true },
             correctTotal: { type: 'integer', nullable: true },
             maxTotal: { type: 'integer', nullable: true },
@@ -792,6 +803,11 @@ const paths = {
             format: 'uri',
             nullable: true,
             description: 'Candidate avatar shown on the read-only result page. Baked into the signed view token (not persisted). Publicly loadable HTTPS image on a CSP-allowed domain.',
+          },
+          role: {
+            type: 'string',
+            nullable: true,
+            description: "Candidate's job position shown under their name on the read-only result page. Baked into the signed view token (not persisted).",
           },
         },
       }, false),
