@@ -395,7 +395,7 @@ export function ResultCertificate({ user, skills, issuedAt, variant = 'full' }) 
 }
 
 export default function Results() {
-  const { exam, answers, attemptId, submitFinal, version } = useExam();
+  const { exam, answers, attemptId, submitFinal, version, launchAvatarUrl } = useExam();
   // Scoring happens on the server so the answer key never reaches the client.
   // In session mode (parent-launched), submitFinal hits /attempts/:id/submit —
   // server snapshots onto the attempt row and pushes to the parent's callback.
@@ -445,7 +445,11 @@ export default function Results() {
     <div className="et et-screen et-screen--white">
       <div className="et-results et-results--dim">
         <div className="et-results__inner">
-          <ResultCertificate user={DEFAULT_USER} skills={result.skills} variant={version} />
+          <ResultCertificate
+            user={launchAvatarUrl ? { ...DEFAULT_USER, avatarUrl: launchAvatarUrl } : DEFAULT_USER}
+            skills={result.skills}
+            variant={version}
+          />
         </div>
       </div>
     </div>

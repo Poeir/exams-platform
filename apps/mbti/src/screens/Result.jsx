@@ -84,7 +84,7 @@ function getTypeColorTheme(code) {
 
 function ResultStorySection({ id, userName, type }) {
   return (
-    <ResultReportSection id={id} number="01" title={`ภาพรวมของ${userName} ...`} kicker="Personality snapshot">
+    <ResultReportSection id={id} number="01" title={`ภาพรวมของคุณ ${userName}`} kicker="Personality snapshot">
       <div className="result-profile-story">
         <div>
           <p className="result-lead">{type.summary}</p>

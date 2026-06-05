@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   flagged:  'et-flagged',
   position: 'et-position',
   attempt:  'et-attempt-id',
+  avatar:   'et-launch-avatar',
 };
 
 // One-time read of ?t=<launch_token> from the URL. Stripped from the address
@@ -21,10 +22,19 @@ function readLaunchToken() {
   return p.get('t');
 }
 
+// Optional ?avatar=<url> alongside ?t=, set by the parent when it created the
+// session. Carried client-side only (never persisted server-side) so the
+// Results screen can show the candidate's avatar. Read once, then stripped.
+function readLaunchAvatar() {
+  if (typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search).get('avatar');
+}
+
 function clearLaunchTokenFromUrl() {
   if (typeof window === 'undefined') return;
   const u = new URL(window.location.href);
   u.searchParams.delete('t');
+  u.searchParams.delete('avatar');
   window.history.replaceState(null, '', u.pathname + (u.search ? u.search : '') + u.hash);
 }
 
@@ -72,6 +82,13 @@ export function ExamProvider({ children }) {
     catch { return null; }
   });
 
+  // Parent-supplied candidate avatar (from /exam?avatar=...), shown on Results.
+  // sessionStorage-backed so it survives a mid-exam refresh, just like attemptId.
+  const [launchAvatarUrl, setLaunchAvatarUrl] = useState(() => {
+    try { return sessionStorage.getItem(STORAGE_KEYS.avatar) || null; }
+    catch { return null; }
+  });
+
   const [answers,  setAnswers]  = useState(() => readJSON(STORAGE_KEYS.answers, {}));
   const [flagged,  setFlagged]  = useState(() => new Set(readJSON(STORAGE_KEYS.flagged, [])));
   const [position, setPosition] = useState(() =>
@@ -108,6 +125,12 @@ export function ExamProvider({ children }) {
       const token = readLaunchToken();
       let attempt = null, paper;
       if (token) {
+        // Grab the avatar before clearLaunchTokenFromUrl() strips it.
+        const avatar = readLaunchAvatar();
+        if (avatar) {
+          setLaunchAvatarUrl(avatar);
+          try { sessionStorage.setItem(STORAGE_KEYS.avatar, avatar); } catch {}
+        }
         try {
           ({ attempt, paper } = await consumeLaunchToken(token));
         } finally {
@@ -330,8 +353,9 @@ export function ExamProvider({ children }) {
       examStartedAt, startExamTimer, setTimeRemaining, examTotalSeconds,
       version, setVersion,
       attemptId, submitFinal, commitAttempt,
+      launchAvatarUrl,
     }),
-    [exam, isLoading, error, loadExam, answers, flagged, position, answer, toggleFlag, resetExam, enterSection, mode, secondsPerItem, startedParts, setPartStarted, resetStartedParts, examStartedAt, startExamTimer, setTimeRemaining, examTotalSeconds, version, setVersion, attemptId, submitFinal, commitAttempt]
+    [exam, isLoading, error, loadExam, answers, flagged, position, answer, toggleFlag, resetExam, enterSection, mode, secondsPerItem, startedParts, setPartStarted, resetStartedParts, examStartedAt, startExamTimer, setTimeRemaining, examTotalSeconds, version, setVersion, attemptId, submitFinal, commitAttempt, launchAvatarUrl]
   );
 
   return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;

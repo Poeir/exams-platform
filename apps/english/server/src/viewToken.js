@@ -14,14 +14,22 @@ export function viewLinkTtlMs() {
   return ttlMin() * 60_000;
 }
 
-export function createViewToken(attemptId) {
+// `avatarUrl` (optional) is the parent-supplied candidate avatar, baked into
+// the signed payload so the read-only result page can show it WITHOUT the
+// engine storing it in the database. The HMAC signature makes it tamper-proof.
+export function createViewToken(attemptId, { avatarUrl } = {}) {
   const payload = Buffer
-    .from(JSON.stringify({ a: attemptId, exp: Date.now() + viewLinkTtlMs() }))
+    .from(JSON.stringify({
+      a: attemptId,
+      exp: Date.now() + viewLinkTtlMs(),
+      ...(avatarUrl ? { av: avatarUrl } : {}),
+    }))
     .toString('base64url');
   return `${payload}.${sign(payload)}`;
 }
 
-// Returns the attempt id when the token is authentic and unexpired; null otherwise.
+// Returns { attemptId, avatarUrl } when the token is authentic and unexpired;
+// null otherwise. avatarUrl is null when the token carried no avatar.
 export function verifyViewToken(token) {
   const [payload, signature] = String(token || '').split('.');
   if (!payload || !signature) return null;
@@ -30,9 +38,9 @@ export function verifyViewToken(token) {
   const want = Buffer.from(expected);
   if (got.length !== want.length || !timingSafeEqual(got, want)) return null;
   try {
-    const { a, exp } = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    const { a, exp, av } = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
     if (typeof a !== 'string' || typeof exp !== 'number' || exp < Date.now()) return null;
-    return a;
+    return { attemptId: a, avatarUrl: typeof av === 'string' ? av : null };
   } catch {
     return null;
   }

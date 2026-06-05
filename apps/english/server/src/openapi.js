@@ -540,6 +540,12 @@ const paths = {
           displayName: { type: 'string', nullable: true, description: 'Snapshot stored on the shared subject.' },
           callbackUrl: { type: 'string', format: 'uri', nullable: true },
           timeLimitMin: { type: 'integer', nullable: true },
+          avatarUrl: {
+            type: 'string',
+            format: 'uri',
+            nullable: true,
+            description: 'Candidate avatar shown on the Results screen. NOT persisted — appended to launchUrl (?avatar=) and carried client-side. Must be a publicly loadable HTTPS image on a domain allowed by the gateway CSP img-src.',
+          },
         },
       }),
       responses: {
@@ -690,6 +696,17 @@ const paths = {
       description: 'Exchanges the parent API key for a signed, short-lived URL (default 15 min, VIEW_LINK_TTL_MIN) that opens a read-only result page in a browser — the "open result in a new tab" flow. The token is stateless (HMAC over attempt id + expiry). Only completed attempts can be viewed.',
       security: [{ parentApiKey: [] }],
       parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+      requestBody: jsonBody({
+        type: 'object',
+        properties: {
+          avatarUrl: {
+            type: 'string',
+            format: 'uri',
+            nullable: true,
+            description: 'Candidate avatar shown on the read-only result page. Baked into the signed view token (not persisted). Publicly loadable HTTPS image on a CSP-allowed domain.',
+          },
+        },
+      }, false),
       responses: {
         201: jsonResp({
           type: 'object',
@@ -722,6 +739,7 @@ const paths = {
             displayName: { type: 'string', nullable: true },
             externalUserId: { type: 'string', nullable: true },
             sourceSystem: { type: 'string', nullable: true },
+            avatarUrl: { type: 'string', format: 'uri', nullable: true, description: 'Carried inside the signed view token (supplied when the link was minted), not stored on the attempt.' },
             completedAt: { type: 'string', format: 'date-time', nullable: true },
             correctTotal: { type: 'integer', nullable: true },
             maxTotal: { type: 'integer', nullable: true },
@@ -766,6 +784,17 @@ const paths = {
         { in: 'path', name: 'source_system', required: true, schema: { type: 'string' } },
         { in: 'path', name: 'external_user_id', required: true, schema: { type: 'string' } },
       ],
+      requestBody: jsonBody({
+        type: 'object',
+        properties: {
+          avatarUrl: {
+            type: 'string',
+            format: 'uri',
+            nullable: true,
+            description: 'Candidate avatar shown on the read-only result page. Baked into the signed view token (not persisted). Publicly loadable HTTPS image on a CSP-allowed domain.',
+          },
+        },
+      }, false),
       responses: {
         201: jsonResp({
           type: 'object',

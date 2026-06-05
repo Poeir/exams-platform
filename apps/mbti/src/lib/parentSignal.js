@@ -12,6 +12,7 @@ const ALLOWED_PARENT_ORIGINS = [
   'https://app.empeo.com', // prod  (TODO: confirm the real empeo origin)
   'https://uat.empeo.com', // uat   (TODO)
   'http://localhost:3000', // local gateway / dev
+  'http://localhost:8080', // local dev (TODO: confirm the real dev origin)
 ];
 
 function resolveParentOrigin() {

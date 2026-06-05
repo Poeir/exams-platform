@@ -61,7 +61,7 @@ export default function ResultViewer() {
               user={{
                 name: state.data.displayName || state.data.externalUserId || 'Anonymous candidate',
                 position: state.data.paperName || 'English Proficiency Test',
-                avatarUrl: null,
+                avatarUrl: state.data.avatarUrl || null,
               }}
               skills={state.data.result?.skills}
               issuedAt={state.data.completedAt}
