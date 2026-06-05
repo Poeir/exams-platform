@@ -1221,10 +1221,16 @@ body {
   .et-intro-pane--right { padding: 20px 16px; }
   .et-intro-pane--right { border-left: 0; border-top: 1px solid var(--gf-cloud-3); }
 
-  /* Exam section grid + panes */
-  .et-exam-grid { grid-template-columns: 1fr !important; overflow: auto; min-height: 0; }
+  /* Exam section grid + panes. minmax(0, 1fr) (not 1fr) is required: with
+     overflow:visible panes, a plain 1fr track = minmax(auto, 1fr), whose `auto`
+     minimum grows to the panes' min-content. The reading-tools toolbar is
+     flex-nowrap (it scrolls horizontally on its own), so its intrinsic
+     min-content is ~620px and would blow the single column out past the
+     viewport. minmax(0, …) + min-width:0 pins the column to the screen width and
+     lets the toolbar scroll internally as intended. */
+  .et-exam-grid { grid-template-columns: minmax(0, 1fr) !important; overflow: auto; min-height: 0; }
   .et-exam-pane--passage,
-  .et-exam-pane--questions { overflow: visible; padding: 16px 14px; }
+  .et-exam-pane--questions { overflow: visible; padding: 16px 14px; min-width: 0; }
   .et-exam-pane--passage { border-right: 0; border-bottom: 1px solid var(--gf-cloud-3); }
   .et-exam-pane--single { padding: 16px 14px 20px; overflow: visible; }
 
