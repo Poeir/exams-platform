@@ -56,15 +56,10 @@ export function Quiz({ answers, setAnswers, onComplete, onBack }) {
         <ProgressDots total={totalQuestions} current={currentIdx} />
         <div className="quiz-meta">
           <strong>{currentIdx + 1}</strong> / {totalQuestions}
-          <span style={{ marginLeft: 8, opacity: 0.6 }}>· {q.label}</span>
         </div>
       </div>
 
       <div className="quiz-card" key={q.id}>
-        <div className="quiz-scenario-label">
-          <Icon name="target" size={14} />
-          <span>สถานการณ์</span>
-        </div>
         <h2 className="quiz-scenario-title">{q.title}</h2>
 
         {q.format === 'mcq' && (
