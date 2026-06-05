@@ -10,10 +10,17 @@ const TWEAKS_STYLE = `
     font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
   .twk-hd{display:flex;align-items:center;justify-content:space-between;
     padding:10px 8px 10px 14px;user-select:none}
+  .twk-hd-ttl{display:flex;align-items:center;gap:8px;flex:1;min-width:0;
+    background:transparent;border:0;color:inherit;font:inherit;text-align:left;
+    cursor:pointer;padding:0}
   .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-acts{display:flex;align-items:center;gap:2px}
   .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
     width:22px;height:22px;border-radius:6px;cursor:pointer;font-size:13px;line-height:1}
   .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-caret{transition:transform .18s cubic-bezier(.3,.7,.4,1);font-size:10px}
+  .twk-caret[data-collapsed="1"]{transform:rotate(-90deg)}
+  .twk-panel[data-collapsed="1"]{width:auto;min-width:160px}
   .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
     overflow-y:auto;overflow-x:hidden;min-height:0}
   .twk-row{display:flex;flex-direction:column;gap:5px}
@@ -60,6 +67,7 @@ export function useTweaks(defaults) {
 
 export function TweaksPanel({ title = 'Tweaks', children }) {
   const [open, setOpen] = React.useState(true);
+  const [collapsed, setCollapsed] = React.useState(false);
   if (!open) {
     return (
       <button
@@ -78,12 +86,28 @@ export function TweaksPanel({ title = 'Tweaks', children }) {
   return (
     <>
       <style>{TWEAKS_STYLE}</style>
-      <div className="twk-panel">
+      <div className="twk-panel" data-collapsed={collapsed ? '1' : '0'}>
         <div className="twk-hd">
-          <b>{title}</b>
-          <button className="twk-x" aria-label="Close tweaks" onClick={() => setOpen(false)}>✕</button>
+          <button
+            type="button"
+            className="twk-hd-ttl"
+            aria-expanded={!collapsed}
+            title={collapsed ? 'Expand' : 'Collapse'}
+            onClick={() => setCollapsed((c) => !c)}
+          >
+            <span className="twk-caret" data-collapsed={collapsed ? '1' : '0'} aria-hidden="true">▼</span>
+            <b>{title}</b>
+          </button>
+          <div className="twk-acts">
+            <button
+              className="twk-x"
+              aria-label={collapsed ? 'Expand tweaks' : 'Collapse tweaks'}
+              onClick={() => setCollapsed((c) => !c)}
+            >{collapsed ? '+' : '–'}</button>
+            <button className="twk-x" aria-label="Close tweaks" onClick={() => setOpen(false)}>✕</button>
+          </div>
         </div>
-        <div className="twk-body">{children}</div>
+        {!collapsed && <div className="twk-body">{children}</div>}
       </div>
     </>
   );

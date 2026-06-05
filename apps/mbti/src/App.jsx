@@ -310,12 +310,22 @@ function DevPanel({
   mockResults,
   onOpenMockResult,
 }) {
+  const [collapsed, setCollapsed] = useState(false);
   return (
-    <aside className="dev-panel" aria-label="Dev tools">
-      <div className="dev-panel-head">
+    <aside className="dev-panel" data-collapsed={collapsed ? '1' : '0'} aria-label="Dev tools">
+      <button
+        type="button"
+        className="dev-panel-head"
+        aria-expanded={!collapsed}
+        title={collapsed ? 'Expand' : 'Collapse'}
+        onClick={() => setCollapsed((value) => !value)}
+      >
         <Icon name="bolt" size={14} />
         <span>Dev tweak</span>
-      </div>
+        <span className="dev-panel-caret" data-collapsed={collapsed ? '1' : '0'} aria-hidden="true">▾</span>
+      </button>
+      {!collapsed && (
+      <>
       <label className="dev-panel-field">
         <span>Screen</span>
         <select value={screen} onChange={(event) => onScreenChange(event.target.value)}>
@@ -366,6 +376,8 @@ function DevPanel({
           </button>
         ))}
       </div>
+      </>
+      )}
     </aside>
   );
 }
