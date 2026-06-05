@@ -6,18 +6,21 @@
 //
 // We never post to '*': the target/sender origin is matched against a hardcoded
 // allowlist. document.referrer (the embedding page's URL) decides which allowed
-// origin to send to. A no-op outside an iframe or when the embedder isn't
-// allowlisted, so standalone runs and unknown hosts never receive anything.
+// origin to send to. A no-op outside an iframe, so standalone runs never receive
+// anything. Empty allowlist = allow every embedder (open for now — fill in
+// before locking down).
 const ALLOWED_PARENT_ORIGINS = [
-  'https://app.empeo.com', // prod  (TODO: confirm the real empeo origin)
-  'https://uat.empeo.com', // uat   (TODO)
-  'http://localhost:3000', // local gateway / dev
-  'http://localhost:8080', // local dev (TODO: confirm the real dev origin)
+  // 'https://app.empeo.com', // prod
+  // 'https://uat.empeo.com', // uat
+  // 'http://localhost:3000', // local gateway / dev
 ];
 
 function resolveParentOrigin() {
   try {
     const ref = document.referrer ? new URL(document.referrer).origin : '';
+    if (!ref) return null;
+    // Empty allowlist = trust whatever origin embedded us.
+    if (ALLOWED_PARENT_ORIGINS.length === 0) return ref;
     return ALLOWED_PARENT_ORIGINS.includes(ref) ? ref : null;
   } catch {
     return null;
