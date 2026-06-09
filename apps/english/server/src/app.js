@@ -16,6 +16,7 @@ import seedRouter from './routes/seed.js';
 import attemptsRouter from './routes/attempts.js';
 import mediaRouter from './routes/media.js';
 import { isConfigured as storageConfigured } from './azureStorage.js';
+import { requireAdmin } from './middleware/adminAuth.js';
 import { openapiSpec } from './openapi.js';
 import { log, requestLogger } from './logger.js';
 
@@ -60,6 +61,15 @@ const staticDir = process.env.STATIC_DIR
 if (fs.existsSync(path.join(staticDir, 'index.html'))) {
   log.info('serving_static', { dir: staticDir });
   app.use(express.static(staticDir));
+  // Gate the admin SPA entry itself. When ADMIN_USERNAME/ADMIN_PASSWORD are
+  // unset, requireAdmin returns 503, so the admin shell never loads at all
+  // (not even the public paper list it would otherwise show). When they are
+  // set, the browser is prompted for Basic auth before the shell is served.
+  // This blocks the whole /admin page, rather than only the admin-only API
+  // calls behind it. Must come before the SPA fallback below.
+  app.get(/^\/admin(\/.*)?$/, requireAdmin, (_req, res) => {
+    res.sendFile(path.join(staticDir, 'index.html'));
+  });
   // SPA fallback: any non-/api GET that isn't a real file returns index.html so
   // client-side routing/refresh works. API 404s fall through to the routers.
   app.get(/^(?!\/api\/).*/, (_req, res) => {

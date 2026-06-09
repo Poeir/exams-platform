@@ -15,8 +15,12 @@ function safeEqual(a, b) {
 export function requireAdmin(req, res, next) {
   const user = process.env.ADMIN_USERNAME;
   const pass = process.env.ADMIN_PASSWORD;
+  // Admin disabled (no credentials configured). Present this as a plain
+  // unauthorized response rather than leaking that the env vars are unset, and
+  // skip WWW-Authenticate so the browser doesn't prompt for a password that
+  // can never succeed.
   if (!user || !pass) {
-    return res.status(503).json({ error: 'ADMIN_USERNAME / ADMIN_PASSWORD not configured' });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const header = req.get('authorization') || '';
