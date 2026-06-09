@@ -39,11 +39,12 @@ Both SPAs are built with `vite build --base=/<prefix>/`; each app's `src/lib/bas
 
 ## Database (shared, schema ownership split)
 
-One database (`gofive_assessments` local / `examo_*` on Azure), one `DATABASE_URL`:
+One database (`gofive_assessments` local / `examo_dev` on Azure — both engines point at the SAME db), one `DATABASE_URL`:
 
 - **english** owns the migration ledger for the `english` + `shared` schemas: `cd apps/english/server` then `npm run migrate` + `npm run seed`.
 - **mbti** owns the `mbti` schema via SQL scripts only (`apps/mbti/prisma/`: mbti-tables.sql → phase2-transfer.sql → merge-results.sql → add-webhook-delivery.sql). **Never run `prisma migrate dev` / `db push` from mbti** — its Prisma schema is introspection-style, not the source of truth for DDL.
 - No auto-migration in the Docker image — schema is applied out-of-band before deploying against a fresh database.
+- **Runtime connection goes through `@prisma/adapter-mssql`** (node-mssql/tedious), not Prisma's Rust connector — `apps/english/server/src/db.js` + `apps/mbti/server/db.js` build the mssql config via their `dbConfig.js` (`buildMssqlConfig`) and pass a `PrismaMssql` adapter to `PrismaClient`. This exists so prod can authenticate with **Azure Managed Identity** (`DB_AUTH_MODE=managed-identity`, no DB password) while local dev keeps SQL auth (`DB_AUTH_MODE=sql`, the default, creds from `DATABASE_URL`). The **Prisma CLI** (migrate/seed/studio) ignores the adapter and still uses the SQL creds in `DATABASE_URL` — so migrations stay SQL-auth even when the running server uses MI. Before flipping a deploy to MI, the App Service identity needs a contained DB user: `CREATE USER [<identity-name>] FROM EXTERNAL PROVIDER;` + `ALTER ROLE db_datareader/db_datawriter/db_ddladmin ADD MEMBER [...]`.
 
 ## Parent-system contract
 

@@ -15,11 +15,14 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "^6.2.1",
+    "@azure/identity": "^4.13.1",
+    "@prisma/adapter-mssql": "^6.19.3",
+    "@prisma/client": "^6.19.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
-    "prisma": "^6.2.1",
+    "mssql": "^11.0.1",
+    "prisma": "^6.19.3",
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
