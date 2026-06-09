@@ -71,7 +71,7 @@ The database starts empty. **Before the exam will load**, populate the content b
 
 ### Environment variables
 
-The frontend needs no env file — public config (Cloudinary upload settings for the admin UI) is served by the backend at `GET /api/config`, so the bundle stays config-free.
+The frontend needs no env file — public config (just an `uploadEnabled` flag for the admin UI) is served by the backend at `GET /api/config`, so the bundle stays config-free. Admin media (images/audio) lives in Azure Blob Storage; the server proxies both upload (`PUT /api/media`) and read (`GET /api/media/:name`) through a server-held SAS, so the storage credential never reaches the browser.
 
 `server/.env` (backend) — key settings:
 
@@ -81,7 +81,7 @@ The frontend needs no env file — public config (Cloudinary upload settings for
 | `PORT` | API port (`3002` for standalone dev — the code default `3001` collides with mbti) |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | HTTP Basic credentials for the admin UI and admin-only API routes (unset = admin disabled, 503) |
 | `PARENT_API_KEY` | Shared secret (`X-API-Key`) for server-to-server calls and signed result webhooks |
-| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_UPLOAD_PRESET` | Unsigned-upload settings served to the browser via `GET /api/config` |
+| `AZURE_STORAGE_ACCOUNT` / `AZURE_STORAGE_CONTAINER` / `AZURE_STORAGE_SAS` | Azure Blob Storage for admin media uploads (proxied via `PUT`/`GET /api/media`); unset = uploads disabled (503). SAS is rotatable without redeploy |
 | `ENGINE_PUBLIC_URL` | Public URL of this engine, used to build candidate launch/view URLs |
 | `LAUNCH_TOKEN_TTL_MIN` | How long a one-time launch token stays valid (default `30`) |
 | `DEFAULT_TIME_LIMIT_MIN` | Fallback per-attempt time limit when none is specified (default `60`) |

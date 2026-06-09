@@ -11,6 +11,7 @@
     "generate": "prisma generate",
     "studio": "prisma studio",
     "seed": "node src/seed.js",
+    "migrate:media": "node scripts/migrate-media-to-azure.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {

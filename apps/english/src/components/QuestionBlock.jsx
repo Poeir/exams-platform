@@ -3,6 +3,14 @@ import { ETIcon, ETOption } from './Common.jsx';
 import { getOptionLetters } from '../data/exam.js';
 import { useExam } from '../state/ExamContext.jsx';
 
+// Per-question task line keyed by the item's `question_type`. Only
+// error_identification needs it: its stem is a full sentence whose A–D options
+// are fragments of that sentence, with nothing telling the taker to hunt for
+// the faulty one. Every other type's stem already asks a clear question.
+const QUESTION_TYPE_INSTRUCTIONS = {
+  error_identification: 'Choose the part of the sentence that contains an error.',
+};
+
 function LetterChoice({ letter, selected, onClick }) {
   return (
     <button
@@ -46,8 +54,17 @@ export default function QuestionBlock({ item, number, columns = 1, lettersOnly =
     ? (lettersOnlyPrompt || 'Listen and choose the best answer.')
     : item.stem;
 
+  // What-to-do line for normal (reading) questions; lettersOnly items already
+  // carry their prompt as the stem, so they don't get a second instruction.
+  const instruction = lettersOnly ? null : QUESTION_TYPE_INSTRUCTIONS[item.question_type];
+
   return (
     <div style={{ paddingBottom: 20 }}>
+      {instruction && (
+        <p style={{ fontSize: 13, fontWeight: 600, fontStyle: 'italic', color: 'var(--fg-3)', lineHeight: 1.5, margin: '0 0 8px' }}>
+          {instruction}
+        </p>
+      )}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12, gap: 12 }}>
         <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg-1)', lineHeight: 1.5, margin: 0 }}>
           {number != null && <>{number}. </>}

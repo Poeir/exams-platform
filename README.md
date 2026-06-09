@@ -83,7 +83,8 @@ Shared DB (`gofive_assessments` local / `examo_*` on Azure):
   health checks `/api/health`.
 - Required env: `DATABASE_URL` (secret), `PARENT_API_KEY` (secret),
   `PUBLIC_BASE_URL`. Recommended in prod: `VIEW_LINK_SECRET` (secret).
-  Optional (english admin): `ADMIN_USERNAME`/`ADMIN_PASSWORD` (secret),
-  `CLOUDINARY_*` — unset means the admin UI is disabled.
+  Optional (english admin): `ADMIN_USERNAME`/`ADMIN_PASSWORD` (secret) — unset
+  means the admin UI is disabled; `AZURE_STORAGE_ACCOUNT`/`AZURE_STORAGE_CONTAINER`/
+  `AZURE_STORAGE_SAS` (secret) for admin media uploads — unset means uploads are disabled.
 - `papers_export_1_full.json` is gitignored (answer keys) — seeding happens
   out-of-band from a machine that has it.

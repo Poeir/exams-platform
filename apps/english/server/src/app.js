@@ -14,6 +14,8 @@ import sectionsRouter from './routes/sections.js';
 import itemsRouter from './routes/items.js';
 import seedRouter from './routes/seed.js';
 import attemptsRouter from './routes/attempts.js';
+import mediaRouter from './routes/media.js';
+import { isConfigured as storageConfigured } from './azureStorage.js';
 import { openapiSpec } from './openapi.js';
 import { log, requestLogger } from './logger.js';
 
@@ -27,11 +29,11 @@ app.use(express.json({ limit: '10mb' }));
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 // Runtime config for the frontend. The browser fetches this at load time so no
-// configuration is baked into the static bundle — all env lives here on the
-// server. These Cloudinary values are public (unsigned uploads) by design.
+// configuration is baked into the static bundle. Media now lives in Azure Blob
+// Storage behind a server-side SAS (see azureStorage.js / routes/media.js), so
+// the only thing the admin UI needs to know is whether uploads are wired up.
 app.get('/api/config', (_req, res) => res.json({
-  cloudName: process.env.CLOUDINARY_CLOUD_NAME || null,
-  uploadPreset: process.env.CLOUDINARY_UPLOAD_PRESET || null,
+  uploadEnabled: storageConfigured(),
 }));
 
 app.get('/api/openapi.json', (_req, res) => res.json(openapiSpec));
@@ -44,6 +46,7 @@ app.use('/api', sectionsRouter);
 app.use('/api', itemsRouter);
 app.use('/api', seedRouter);
 app.use('/api', attemptsRouter);
+app.use('/api', mediaRouter);
 
 // Serve the built frontend (SPA) when a dist/ bundle is present. This lets one
 // container host both the API (/api/*) and the static app (/) on a single port.
