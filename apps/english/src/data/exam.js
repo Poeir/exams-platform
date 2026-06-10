@@ -178,5 +178,9 @@ export function unansweredItems(items, answers = {}) {
   return items.filter((it) => !answers[it.id]).map((it) => it.id);
 }
 
+export function unansweredExamItems(exam, answers = {}) {
+  return unansweredItems(exam?.flat, answers);
+}
+
 // Scoring lives on the server (POST /api/papers/:id/score) so the answer key
 // never reaches the client. See scorePaper() in src/data/examRepo.js.

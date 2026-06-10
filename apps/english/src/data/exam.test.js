@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExam, partsBySection, totalsBySection, getOptionLetters, unansweredItems, paperVariant } from './exam.js';
+import { buildExam, partsBySection, totalsBySection, getOptionLetters, unansweredItems, unansweredExamItems, paperVariant } from './exam.js';
 
 // A small bundle in the API's GET /api/papers/:id shape: { paper, sections }.
 function makeBundle() {
@@ -221,5 +221,16 @@ describe('unansweredItems', () => {
   it('returns [] for null/empty item lists', () => {
     expect(unansweredItems(null, {})).toEqual([]);
     expect(unansweredItems([], { q1: 'A' })).toEqual([]);
+  });
+});
+
+describe('unansweredExamItems', () => {
+  it('counts unanswered items across the whole exam, not just the current section', () => {
+    const exam = buildExam(makeBundle());
+    expect(unansweredExamItems(exam, { i3: 'A', i4: 'B', i5: 'C' })).toEqual(['i1', 'i2']);
+  });
+
+  it('returns [] when exam is missing', () => {
+    expect(unansweredExamItems(null, {})).toEqual([]);
   });
 });

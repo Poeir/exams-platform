@@ -102,7 +102,23 @@ function useStrictListeningDirections({ enabled, onComplete }) {
     audio.play().then(() => setBlocked(false)).catch(() => setBlocked(true));
   };
 
-  return { phase, total, remaining, playing, blocked, resume };
+  const skip = (e) => {
+    e?.stopPropagation();
+    if (advancedRef.current) return;
+    advancedRef.current = true;
+    try {
+      audioRef.current?.pause();
+      if (audioRef.current) audioRef.current.currentTime = 0;
+    } catch {
+      // Ignore browser audio edge cases while skipping the directions.
+    }
+    setPlaying(false);
+    setBlocked(false);
+    setPhase('done');
+    onComplete?.();
+  };
+
+  return { phase, total, remaining, playing, blocked, resume, skip };
 }
 
 function ListeningDirectionsBanner({ phase, playing, blocked, remaining }) {
@@ -370,6 +386,10 @@ function Instructions({ variant = 'listening', onFlowNext, onFlowPrev, onExit })
 
   const handleNext = (e) => {
     e.stopPropagation();
+    if (autoplayDirections) {
+      dir.skip(e);
+      return;
+    }
     onFlowNext?.();
   };
 
@@ -423,12 +443,10 @@ function Instructions({ variant = 'listening', onFlowNext, onFlowPrev, onExit })
       />
       <button
         type="button"
-        disabled
-        aria-disabled="true"
+        onClick={handleNext}
         className="et-btn et-btn--primary"
-        style={{ opacity: 0.55, cursor: 'not-allowed' }}
       >
-        Starting…
+        {data.nextLabel}
         <span style={{ display: 'inline-flex', width: 16, height: 16 }}>{ETIcon.arrowRight}</span>
       </button>
     </div>
