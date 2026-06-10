@@ -371,15 +371,15 @@ export function ResultCertificate({ user, skills, issuedAt, variant = 'full' }) 
 
       {/* detail panels */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+        <PanelCard title="Score Band Reference" meta={levelText}>
+          <BandReference guide={guide} activeLevel={activeLevel} />
+        </PanelCard>
+
         <PanelCard
           title="Section breakdown"
           meta={`${skills.total.correct} / ${skills.total.total} correct`}
         >
           <SectionGauges sections={sections} />
-        </PanelCard>
-
-        <PanelCard title="Score Band Reference" meta={levelText}>
-          <BandReference guide={guide} activeLevel={activeLevel} />
         </PanelCard>
 
         <PanelCard title={`What this level means · ${levelText}`}>
