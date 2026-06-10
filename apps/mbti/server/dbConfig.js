@@ -1,64 +1,41 @@
 // Builds the node-mssql connection config consumed by @prisma/adapter-mssql
-// (tedious under the hood) from the Prisma-style DATABASE_URL, choosing the
-// authentication method by DB_AUTH_MODE:
+// (tedious under the hood). Authentication is ALWAYS Azure Entra ID (Managed
+// Identity) via DefaultAzureCredential — there is no SQL-password path on the
+// runtime wire.
 //
-//   'sql' (default)          — username/password taken from DATABASE_URL.
-//                              Local dev and the old behaviour, unchanged.
-//   'managed-identity'/'aad' — Azure Entra ID via DefaultAzureCredential, no
-//                              secret on the wire. On Azure App Service this is
-//                              the resource's managed identity; set
-//                              AZURE_SQL_CLIENT_ID to pin a *user-assigned*
-//                              identity (omit it for system-assigned).
+// The DB target is configured HERE, directly in code — NOT via env vars and NOT
+// via a connection string. (Azure Blob Storage config is a separate system and
+// still comes from AZURE_STORAGE_* env.)
 //
-// DATABASE_URL stays the single source of host/port/database; only the runtime
-// connection swaps to managed identity. (mbti applies its schema via the
-// hand-maintained SQL scripts in prisma/, not the Prisma CLI — see CLAUDE.md.)
+// mbti applies its schema via the hand-maintained SQL scripts in prisma/ (see
+// CLAUDE.md), so there is no Prisma CLI migration step here at all — the runtime
+// MI config below is the only way this engine reaches the DB.
 
-// Parse `sqlserver://host:port;key=value;key=value` (Prisma's semicolon-style
-// SQL Server URL — not a standard query string, so URL() can't be used).
-export function parseSqlServerUrl(url) {
-  if (!url) throw new Error('DATABASE_URL is not set');
-  const withoutScheme = url.replace(/^sqlserver:\/\//i, '');
-  const [hostPort, ...pairs] = withoutScheme.split(';');
-  const [server, port] = hostPort.split(':');
-  const params = {};
-  for (const pair of pairs) {
-    if (!pair) continue;
-    const idx = pair.indexOf('=');
-    if (idx === -1) continue;
-    params[pair.slice(0, idx).trim().toLowerCase()] = pair.slice(idx + 1).trim();
-  }
-  return { server, port: port ? Number(port) : 1433, params };
-}
+const dbSettings = {
+  host: 'gofive.database.windows.net', // Azure SQL server FQDN
+  port: 1433,
+  database: process.env.DB_DATABASE || 'examo_dev', // the only env-driven DB field
+  encrypt: true, // required by Azure SQL
+  trustServerCertificate: false,
+  // DefaultAzureCredential: managed identity in Azure, az-login locally.
+  // Set only for a USER-assigned managed identity; '' = system-assigned.
+  managedIdentityClientId: '',
+};
 
-export function buildMssqlConfig(url = process.env.DATABASE_URL, env = process.env) {
-  const { server, port, params } = parseSqlServerUrl(url);
-  const authMode = (env.DB_AUTH_MODE || 'sql').toLowerCase();
-
-  const config = {
-    server,
-    port,
-    database: params.database,
+export function buildMssqlConfig() {
+  return {
+    server: dbSettings.host,
+    port: dbSettings.port,
+    database: dbSettings.database,
     options: {
-      // Azure SQL requires TLS; the URL's flags win so local dev with a
-      // self-signed cert (trustServerCertificate=true) keeps working.
-      encrypt: params.encrypt ? params.encrypt !== 'false' : true,
-      trustServerCertificate: params.trustservercertificate === 'true',
+      encrypt: dbSettings.encrypt,
+      trustServerCertificate: dbSettings.trustServerCertificate,
+    },
+    authentication: {
+      type: 'azure-active-directory-default',
+      options: dbSettings.managedIdentityClientId
+        ? { clientId: dbSettings.managedIdentityClientId }
+        : {},
     },
   };
-
-  if (authMode === 'managed-identity' || authMode === 'aad') {
-    config.authentication = {
-      type: 'azure-active-directory-default',
-      // clientId selects a user-assigned managed identity; absent => the
-      // DefaultAzureCredential chain (system-assigned MI, az login, etc.).
-      options: env.AZURE_SQL_CLIENT_ID ? { clientId: env.AZURE_SQL_CLIENT_ID } : {},
-    };
-    return config;
-  }
-
-  // Default: SQL authentication from the connection string.
-  config.user = params.user;
-  config.password = params.password;
-  return config;
 }

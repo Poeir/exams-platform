@@ -39,12 +39,13 @@ Both SPAs are built with `vite build --base=/<prefix>/`; each app's `src/lib/bas
 
 ## Database (shared, schema ownership split)
 
-One database (`gofive_assessments` local / `examo_dev` on Azure — both engines point at the SAME db), one `DATABASE_URL`:
+One database (`gofive_assessments` local / `examo_dev` on Azure — both engines point at the SAME db):
 
 - **english** owns the migration ledger for the `english` + `shared` schemas: `cd apps/english/server` then `npm run migrate` + `npm run seed`.
 - **mbti** owns the `mbti` schema via SQL scripts only (`apps/mbti/prisma/`: mbti-tables.sql → phase2-transfer.sql → merge-results.sql → add-webhook-delivery.sql). **Never run `prisma migrate dev` / `db push` from mbti** — its Prisma schema is introspection-style, not the source of truth for DDL.
 - No auto-migration in the Docker image — schema is applied out-of-band before deploying against a fresh database.
-- **Runtime connection goes through `@prisma/adapter-mssql`** (node-mssql/tedious), not Prisma's Rust connector — `apps/english/server/src/db.js` + `apps/mbti/server/db.js` build the mssql config via their `dbConfig.js` (`buildMssqlConfig`) and pass a `PrismaMssql` adapter to `PrismaClient`. This exists so prod can authenticate with **Azure Managed Identity** (`DB_AUTH_MODE=managed-identity`, no DB password) while local dev keeps SQL auth (`DB_AUTH_MODE=sql`, the default, creds from `DATABASE_URL`). The **Prisma CLI** (migrate/seed/studio) ignores the adapter and still uses the SQL creds in `DATABASE_URL` — so migrations stay SQL-auth even when the running server uses MI. Before flipping a deploy to MI, the App Service identity needs a contained DB user: `CREATE USER [<identity-name>] FROM EXTERNAL PROVIDER;` + `ALTER ROLE db_datareader/db_datawriter/db_ddladmin ADD MEMBER [...]`.
+- **Runtime connection goes through `@prisma/adapter-mssql`** (node-mssql/tedious), not Prisma's Rust connector — `apps/english/server/src/db.js` + `apps/mbti/server/db.js` build the mssql config via their `dbConfig.js` (`buildMssqlConfig`) and pass a `PrismaMssql` adapter to `PrismaClient`. The runtime authenticates **only with Azure Managed Identity** (`azure-active-directory-default` / `DefaultAzureCredential`, no DB password ever on the wire). Host, port, TLS, and the user-assigned `clientId` are **hardcoded in the `dbSettings` object in each `dbConfig.js`**; the only env-driven field is the **database name (`DB_DATABASE`, defaults to `examo_dev`)** — there is NO `DATABASE_URL` at runtime. Before a deploy works, the App Service identity needs a contained DB user: `CREATE USER [<identity-name>] FROM EXTERNAL PROVIDER;` + `ALTER ROLE db_datareader/db_datawriter/db_ddladmin ADD MEMBER [...]`.
+- **`DATABASE_URL` is a Prisma-CLI-only var** — it lives in `schema.prisma` (`env("DATABASE_URL")`) so an operator can run english `migrate`/`seed` out-of-band with SQL auth. It is NOT a runtime/deploy var: `prisma generate` (the Docker postinstall) doesn't connect, the server uses the adapter+MI, so the deployed image never needs it. mbti has no CLI step at all (SQL scripts), so it never needs `DATABASE_URL`.
 
 ## Parent-system contract
 
@@ -57,6 +58,6 @@ One database (`gofive_assessments` local / `examo_dev` on Azure — both engines
 
 ## Environment & deploy
 
-- `.env.example` documents all vars; required: `DATABASE_URL`, `PARENT_API_KEY`, `PUBLIC_BASE_URL`. Unset `ADMIN_USERNAME`/`ADMIN_PASSWORD` means the english admin UI is disabled (503). `VIEW_LINK_SECRET` defaults to deriving from `PARENT_API_KEY` — set explicitly in prod.
+- `.env.example` documents all vars; required at runtime: `DB_DATABASE` (the DB name — host/auth are hardcoded in `dbConfig.js`, managed identity only), `PARENT_API_KEY`, `PUBLIC_BASE_URL`. Unset `ADMIN_USERNAME`/`ADMIN_PASSWORD` means the english admin UI is disabled (503). `VIEW_LINK_SECRET` defaults to deriving from `PARENT_API_KEY` — set explicitly in prod. (`DATABASE_URL` is Prisma-CLI-only, not a deploy var — see Database above.)
 - Deployed on platformdio: port 3000, health check `/api/health`.
 - `papers_export_1_full.json` (english exam content + answer keys) is **gitignored** — seeding happens out-of-band from a machine that has it; the Docker build deliberately excludes it.

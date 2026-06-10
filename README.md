@@ -81,10 +81,17 @@ Shared DB (`gofive_assessments` local / `examo_*` on Azure):
 
 - Service port `3000`, Dockerfile `Dockerfile`, working dir `.`,
   health checks `/api/health`.
-- Required env: `DATABASE_URL` (secret), `PARENT_API_KEY` (secret),
-  `PUBLIC_BASE_URL`. Recommended in prod: `VIEW_LINK_SECRET` (secret).
-  Optional (english admin): `ADMIN_USERNAME`/`ADMIN_PASSWORD` (secret) — unset
-  means the admin UI is disabled; `AZURE_STORAGE_ACCOUNT`/`AZURE_STORAGE_CONTAINER`/
-  `AZURE_STORAGE_SAS` (secret) for admin media uploads — unset means uploads are disabled.
+- Required env: `DB_DATABASE` (the DB name — runtime connects via Azure
+  **Managed Identity** only; host/auth are hardcoded in each app's `dbConfig.js`),
+  `PARENT_API_KEY` (secret), `PUBLIC_BASE_URL`. Recommended in prod:
+  `VIEW_LINK_SECRET` (secret). Optional (english admin): `ADMIN_USERNAME`/
+  `ADMIN_PASSWORD` (secret) — unset means the admin UI is disabled;
+  `AZURE_STORAGE_ACCOUNT`/`AZURE_STORAGE_CONTAINER`/`AZURE_STORAGE_SAS` (secret)
+  for admin media uploads — unset means uploads are disabled.
+  - **`DATABASE_URL` is NOT a deploy var** — it is read only by the Prisma CLI
+    (`migrate`/`seed`) run out-of-band with SQL auth; the deployed image never uses it.
+  - The App Service identity needs a contained DB user first:
+    `CREATE USER [<identity-name>] FROM EXTERNAL PROVIDER;` +
+    `ALTER ROLE db_datareader/db_datawriter/db_ddladmin ADD MEMBER [...]`.
 - `papers_export_1_full.json` is gitignored (answer keys) — seeding happens
   out-of-band from a machine that has it.

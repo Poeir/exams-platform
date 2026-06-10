@@ -23,6 +23,10 @@ generator client {
 
 datasource db {
   provider = "sqlserver"
+  // DATABASE_URL is consumed ONLY by the Prisma CLI (migrate/seed/studio), which
+  // an operator runs out-of-band with SQL auth. The deployed server never reads
+  // it — it connects via the @prisma/adapter-mssql driver adapter with managed
+  // identity, configured from discrete DB_* env vars (see src/dbConfig.js).
   url      = env("DATABASE_URL")
   // Phase 2: ownership is split by SQL Server schema namespace. This project
   // owns the migration ledger for `english` AND `shared`; the mbti service

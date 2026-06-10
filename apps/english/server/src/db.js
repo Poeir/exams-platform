@@ -5,11 +5,11 @@ import { log } from './logger.js';
 import { buildMssqlConfig } from './dbConfig.js';
 
 // Single shared Prisma Client for the whole server, backed by the node-mssql
-// driver adapter. The adapter (not Prisma's built-in Rust connector) is what
-// lets us authenticate to Azure SQL with a managed identity in production
-// (DB_AUTH_MODE=managed-identity) — tedious refreshes the AAD token itself.
-// SQL auth from DATABASE_URL stays the default for local dev. The adapter owns
-// the connection pool; Prisma no longer opens its own.
+// driver adapter. The adapter (not Prisma's built-in Rust connector) authenticates
+// to Azure SQL with a managed identity — tedious refreshes the AAD token itself.
+// The DB target is configured directly in code (see dbConfig.js); there is no
+// DATABASE_URL on the runtime wire. The adapter owns the connection pool; Prisma
+// no longer opens its own. (DATABASE_URL is only for the out-of-band Prisma CLI.)
 const mssqlConfig = buildMssqlConfig();
 const adapter = new PrismaMssql(mssqlConfig);
 export const prisma = new PrismaClient({ adapter });
