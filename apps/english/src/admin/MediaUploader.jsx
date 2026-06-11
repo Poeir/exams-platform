@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getRuntimeConfig } from '../data/config.js';
+import { withBase, resolveMediaUrl } from '../lib/base.js';
 
 export default function MediaUploader({ accept, label, currentUrl, onUploaded }) {
   const [busy, setBusy] = useState(false);
@@ -7,31 +7,31 @@ export default function MediaUploader({ accept, label, currentUrl, onUploaded })
   const [saved, setSaved] = useState(false);
   const isImage = accept?.startsWith('image');
   const isAudio = accept?.startsWith('audio');
+  const previewUrl = resolveMediaUrl(currentUrl);
 
   const handleFile = async (file) => {
     if (!file) return;
-    const { cloudName, uploadPreset } = await getRuntimeConfig();
-    if (!cloudName || !uploadPreset) {
-      setErr('Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET on the server.');
-      return;
-    }
     setBusy(true);
     setErr(null);
     setSaved(false);
     try {
-      const form = new FormData();
-      form.append('file', file);
-      form.append('upload_preset', uploadPreset);
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
-        method: 'POST',
-        body: form,
-      });
+      // Stream the raw bytes to our own API, which PUTs them to Azure with the
+      // server-held SAS (the browser never sees the credential). Basic-auth
+      // creds are attached automatically — the admin is already signed in.
+      const res = await fetch(
+        `${withBase('/api/media')}?filename=${encodeURIComponent(file.name)}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': file.type || 'application/octet-stream' },
+          body: file,
+        },
+      );
       if (!res.ok) {
         const text = await res.text().catch(() => '');
-        throw new Error(`Cloudinary ${res.status}: ${text}`);
+        throw new Error(`Upload ${res.status}: ${text}`);
       }
-      const data = await res.json();
-      await onUploaded?.(data.secure_url, data);
+      const { name } = await res.json();
+      await onUploaded?.(name);
       setSaved(true);
     } catch (e) {
       setErr(e.message || 'Upload failed');
@@ -48,9 +48,9 @@ export default function MediaUploader({ accept, label, currentUrl, onUploaded })
       </div>
       {currentUrl && (
         <>
-          {isImage && <img className="et-admin-media__image" src={currentUrl} alt="Uploaded preview" />}
-          {isAudio && <audio className="et-admin-media__audio" src={currentUrl} controls preload="metadata" />}
-          <a className="et-admin-media__url" href={currentUrl} target="_blank" rel="noreferrer">{currentUrl}</a>
+          {isImage && <img className="et-admin-media__image" src={previewUrl} alt="Uploaded preview" />}
+          {isAudio && <audio className="et-admin-media__audio" src={previewUrl} controls preload="metadata" />}
+          <a className="et-admin-media__url" href={previewUrl} target="_blank" rel="noreferrer">{currentUrl}</a>
         </>
       )}
       <label className={`et-admin-media__pick${busy ? ' is-disabled' : ''}`}>

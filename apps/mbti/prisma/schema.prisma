@@ -13,6 +13,10 @@ generator client {
 
 datasource db {
   provider = "sqlserver"
+  // DATABASE_URL is only here to satisfy the Prisma CLI (generate/introspect);
+  // mbti applies its schema via the SQL scripts in this dir, not the CLI. The
+  // deployed server never reads it — it connects via the @prisma/adapter-mssql
+  // driver adapter with managed identity, from discrete DB_* env vars (db.js).
   url      = env("DATABASE_URL")
   // Phase 2 of the unified-DB plan (english-test/docs/unified-db-plan.md):
   // table ownership is split by SQL Server schema. This service OWNS `mbti`

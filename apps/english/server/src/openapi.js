@@ -10,6 +10,7 @@ const tags = [
   { name: 'Attempts', description: 'Candidate attempt lifecycle: launch → consume → answer → submit' },
   { name: 'Admin', description: 'Admin SPA endpoints (HTTP Basic auth)' },
   { name: 'Seed', description: 'Bulk-load papers from JSON' },
+  { name: 'Media', description: 'Image/audio upload + read proxy (Azure Blob Storage)' },
 ];
 
 const securitySchemes = {
@@ -304,15 +305,50 @@ const paths = {
       tags: ['Meta'],
       summary: 'Public runtime config for the frontend',
       description:
-        'Cloudinary unsigned-upload settings served at load time so no configuration is baked into the static bundle. Values are public by design; `null` when the env vars are unset.',
+        'Runtime flags served at load time so nothing is baked into the static bundle. `uploadEnabled` reflects whether the Azure Blob storage env (AZURE_STORAGE_*) is configured; the admin media uploader is disabled when false.',
       responses: {
         200: jsonResp({
           type: 'object',
           properties: {
-            cloudName: { type: 'string', nullable: true },
-            uploadPreset: { type: 'string', nullable: true },
+            uploadEnabled: { type: 'boolean' },
           },
         }),
+      },
+    },
+  },
+
+  '/api/media': {
+    put: {
+      tags: ['Media'],
+      summary: 'Upload an image/audio asset (admin)',
+      description:
+        'Streams the raw request body (image/* or audio/*) to Azure Blob Storage via the server-held SAS and returns the opaque blob name to persist in an item\'s `_extras`. Basic admin auth required; 503 when storage is not configured.',
+      security: [{ adminBasic: [] }],
+      parameters: [{
+        name: 'filename', in: 'query', required: false, schema: { type: 'string' },
+        description: 'Original filename — only its extension is kept on the stored blob name.',
+      }],
+      requestBody: {
+        required: true,
+        content: { 'image/*': { schema: { type: 'string', format: 'binary' } }, 'audio/*': { schema: { type: 'string', format: 'binary' } } },
+      },
+      responses: {
+        201: jsonResp({ type: 'object', properties: { name: { type: 'string' } } }, 'Stored blob name'),
+        415: jsonResp({ type: 'object', properties: { error: { type: 'string' } } }, 'Unsupported content type'),
+      },
+    },
+  },
+
+  '/api/media/{name}': {
+    get: {
+      tags: ['Media'],
+      summary: 'Read a media asset (public proxy)',
+      description:
+        'Streams a blob back from Azure through the server-held SAS so the locked-down storage account stays private. Forwards Range for audio seeking; cached immutably.',
+      parameters: [{ name: 'name', in: 'path', required: true, schema: { type: 'string' } }],
+      responses: {
+        200: { description: 'The asset bytes' },
+        404: { description: 'Blob not found' },
       },
     },
   },

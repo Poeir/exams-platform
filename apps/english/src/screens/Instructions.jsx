@@ -132,7 +132,8 @@ export const LISTENING_PARTS = [
     sample: {
       eyebrow: 'Example',
       prompt: 'Look at the picture marked number 1.',
-      imageUrl: 'https://res.cloudinary.com/deqk2coqu/image/upload/v1779421062/a20a3028-5f18-4006-8690-f74733d4ca11_xhskbq.png',
+      // Azure blob name; resolved to /api/media/<name> at render via resolveMediaUrl.
+      imageUrl: 'instructions-part1-example.png',
       options: [
         { l: 'A', t: 'The man is carrying a box.', selected: true },
         { l: 'B', t: 'The man is sitting at a desk.' },

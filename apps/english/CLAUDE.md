@@ -75,7 +75,8 @@ Express app built in `server/src/app.js` (exported, never listens — the gatewa
 - **Attempts** (`routes/attempts.js`) — sessions/launch-token handshake, consume, autosave, submit (server-side scoring in `scoring.js`, CEFR banding in `cefr.js`), webhook redeliver, view links, subject result history, admin attempt views. Parent-facing responses go through `toParentAttempt()` / `parentStatus()` (camelCase, `submitted` → `completed` on the wire) — never leak snake_case to the parent.
 - **Webhooks** (`webhook.js`) — result snapshot POSTed to the attempt's callback URL, HMAC-signed with `PARENT_API_KEY` (`X-Signature: sha256=<hmac>`), retries bounded by `WEBHOOK_*` envs.
 - **OpenAPI** — spec in `server/src/openapi.js`, served at `GET /api/openapi.json` + Swagger UI at `/api/docs`. Keep it in sync when adding/changing routes.
-- `GET /api/config` serves the public Cloudinary upload settings so the frontend bundle stays config-free.
+- **Media** (`routes/media.js` + `azureStorage.js`) — admin uploads via `PUT /api/media` (Basic auth) stream to Azure Blob Storage through a server-held container SAS and return an opaque blob name (stored in an item's `_extras.image_url`/`audio_url`); candidates read via the public proxy `GET /api/media/:name`. The account has anonymous read disabled, so the SAS never reaches the browser — resolve stored names through `resolveMediaUrl()` in `src/lib/base.js`. `AZURE_STORAGE_*` env (unset = uploads 503); rotate the SAS in env without code/content changes. One-off Cloudinary→Azure migration: `npm run migrate:media` in `server/`.
+- `GET /api/config` serves a public `uploadEnabled` flag (Azure storage configured?) so the frontend bundle stays config-free.
 
 ## Important repo notes
 

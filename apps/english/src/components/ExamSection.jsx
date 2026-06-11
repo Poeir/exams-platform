@@ -9,7 +9,7 @@ import { partsBySection, unansweredItems } from '../data/exam.js';
 import { useExam, VERSIONS } from '../state/ExamContext.jsx';
 import { LISTENING_PARTS } from '../screens/Instructions.jsx';
 import { POST_AUDIO_BUFFER_SEC, playStartBeep } from './examAudio.js';
-import { withBase } from '../lib/base.js';
+import { withBase, resolveMediaUrl } from '../lib/base.js';
 
 const READING_HIGHLIGHT_COLORS = [
   { id: 'yellow', label: 'Yellow', value: '#FFE3A3' },
@@ -223,7 +223,7 @@ function ExamAudioBar({ playing, blocked, ended }) {
 function PhotographArea({ item }) {
   const extras = item?.options?._extras;
   const prompt = extras?.image_prompt;
-  const url = extras?.image_url;
+  const url = resolveMediaUrl(extras?.image_url);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => { setFailed(false); }, [url]);
@@ -421,7 +421,7 @@ function PartIntroScreen({ part, sectionLabel, audioSrc, onStart, onExit, allowS
           {part.sample.imageUrl && (
             <div style={{ marginBottom: 18, borderRadius: 12, overflow: 'hidden', background: '#0b0b0f', aspectRatio: '16 / 9' }}>
               <img
-                src={part.sample.imageUrl}
+                src={resolveMediaUrl(part.sample.imageUrl)}
                 alt="Example photograph"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
@@ -661,7 +661,7 @@ export default function ExamSection({ section, onFlowNext, onFlowPrev, onExit })
   const postAudioSec = listeningPostAudioSec(groupItemsCount);
   const groupKey = `${currentPart?.number}-${groupIndex}`;
   const listeningExamActive = !isReading && !showIntro && !!group && section === 'listening';
-  const groupAudioSrc = group?.items?.[0]?.options?._extras?.audio_url || LISTENING_QUESTION_AUDIO;
+  const groupAudioSrc = resolveMediaUrl(group?.items?.[0]?.options?._extras?.audio_url) || LISTENING_QUESTION_AUDIO;
 
   const examAudioRef = useRef(null);
   const endedGroupKeyRef = useRef(null);

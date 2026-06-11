@@ -8,16 +8,12 @@
 const parentApiKey = process.env.PARENT_API_KEY
   || (process.env.NODE_ENV === 'production' ? null : 'dev-parent-key');
 
-// In production a missing DATABASE_URL must fail fast — the localhost
-// fallback exists only so local dev works when .env goes missing.
-if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL must be set in production.');
-}
+// DB connection target/auth is configured directly in code by dbConfig.js
+// (managed identity only) — there is no DB env var and no DATABASE_URL guard or
+// fallback here.
 
 export const config = {
   port: Number(process.env.PORT || 3001),
-  databaseUrl: process.env.DATABASE_URL
-    || 'sqlserver://localhost:1433;database=gofive_assessments;user=sa;password=Your_password123;encrypt=true;trustServerCertificate=true',
   // Public URL of THIS engine as seen by browsers, used to mint view links.
   // Resolution order: explicit FRONTEND_URL → gateway-wide PUBLIC_BASE_URL +
   // /mbti (the mount prefix) → standalone-dev Vite origin.
