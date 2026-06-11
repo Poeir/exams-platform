@@ -24,7 +24,12 @@ export default function EndOfListening({ onFlowNext, onExit }) {
   const advance = () => {
     if (advancedRef.current) return;
     advancedRef.current = true;
-    try { audioRef.current?.pause(); } catch { /* ignore */ }
+    try {
+      audioRef.current?.pause();
+      if (audioRef.current) audioRef.current.currentTime = 0;
+    } catch {
+      // Ignore browser audio edge cases while continuing to Reading.
+    }
     setPhase('done');
     onFlowNext && onFlowNext();
   };
@@ -165,12 +170,10 @@ export default function EndOfListening({ onFlowNext, onExit }) {
               )}
               <button
                 type="button"
-                disabled
-                aria-disabled="true"
+                onClick={(e) => { e.stopPropagation(); advance(); }}
                 className="et-btn et-btn--primary"
-                style={{ opacity: 0.55, cursor: 'not-allowed' }}
               >
-                Continuing…
+                Continue to Reading
                 <span style={{ display: 'inline-flex', width: 16, height: 16 }}>{ETIcon.arrowRight}</span>
               </button>
             </>

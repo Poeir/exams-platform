@@ -5,7 +5,7 @@ import Eyebrow from './Eyebrow.jsx';
 import QuestionBlock from './QuestionBlock.jsx';
 import CountdownCircle from './CountdownCircle.jsx';
 import SampleQuestion from './SampleQuestion.jsx';
-import { partsBySection, unansweredItems } from '../data/exam.js';
+import { partsBySection, unansweredExamItems } from '../data/exam.js';
 import { useExam, VERSIONS } from '../state/ExamContext.jsx';
 import { LISTENING_PARTS } from '../screens/Instructions.jsx';
 import { POST_AUDIO_BUFFER_SEC, playStartBeep } from './examAudio.js';
@@ -363,6 +363,20 @@ function PartIntroScreen({ part, sectionLabel, audioSrc, onStart, onExit, allowS
     audio.play().then(() => setAudioBlocked(false)).catch(() => setAudioBlocked(true));
   };
 
+  const skipDirections = (e) => {
+    e?.stopPropagation();
+    if (advancedRef.current) return;
+    advancedRef.current = true;
+    try {
+      audioRef.current?.pause();
+      if (audioRef.current) audioRef.current.currentTime = 0;
+    } catch {
+      // Ignore browser audio edge cases while skipping the directions.
+    }
+    setPhase('done');
+    onStart?.();
+  };
+
   const status = audioBlocked
     ? 'Press play to hear the directions — the exam starts automatically when audio finishes.'
     : phase === 'beep'
@@ -466,29 +480,20 @@ function PartIntroScreen({ part, sectionLabel, audioSrc, onStart, onExit, allowS
           {allowSkip && (
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (advancedRef.current) return;
-                advancedRef.current = true;
-                try { audioRef.current?.pause(); } catch { /* ignore */ }
-                setPhase('done');
-                onStart?.();
-              }}
+              onClick={skipDirections}
               className="et-btn et-btn--ghost et-btn--sm"
               style={{ fontSize: 11, opacity: 0.7 }}
-              title="Skip the directions (dev)"
+              title="Skip the directions"
             >
               Skip
             </button>
           )}
           <button
             type="button"
-            disabled
+            onClick={skipDirections}
             className="et-btn et-btn--primary"
-            style={{ opacity: 0.55, cursor: 'not-allowed' }}
-            aria-disabled="true"
           >
-            Starting…
+            Start Part {part.number}
             <span style={{ display: 'inline-flex', width: 16, height: 16 }}>{ETIcon.arrowRight}</span>
           </button>
         </div>
@@ -548,7 +553,7 @@ function SubmitConfirmModal({ unansweredCount, onCancel, onConfirm }) {
         </div>
 
         <p style={{ margin: 0, fontSize: 14, color: 'var(--fg-2)', fontWeight: 500, lineHeight: 1.6 }}>
-          Unanswered questions are marked wrong and cannot be changed once you submit. You can go back to review them, or submit now and end the test.
+          Unanswered questions are marked wrong and cannot be changed once you submit. Review the available questions, or submit now and end the test.
         </p>
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24 }}>
@@ -605,15 +610,10 @@ export default function ExamSection({ section, onFlowNext, onFlowPrev, onExit })
   const atSectionEnd = isLastGroup && isLastPart;
 
   // Reading is always the final section, so finishing it submits the whole
-  // exam. Warn first if anything in this section is still unanswered — listening
-  // (strict, locked) can no longer be changed by this point, so we only count
-  // what the candidate can still act on.
+  // exam. Warn if anything in the whole paper is still unanswered, including
+  // strict listening questions that cannot be changed by this point.
   const isFinalSubmit = atSectionEnd && isReading;
-  const sectionItems = useMemo(
-    () => parts.flatMap((p) => p.groups.flatMap((g) => g.items)),
-    [parts],
-  );
-  const unanswered = useMemo(() => unansweredItems(sectionItems, answers), [sectionItems, answers]);
+  const unanswered = useMemo(() => unansweredExamItems(exam, answers), [exam, answers]);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   const goToNext = () => {
@@ -647,6 +647,17 @@ export default function ExamSection({ section, onFlowNext, onFlowPrev, onExit })
     if (isFinalSubmit && unanswered.length > 0) {
       setShowSubmitConfirm(true);
       return;
+    }
+    if (listeningExamActive) {
+      try {
+        examAudioRef.current?.pause();
+        if (examAudioRef.current) examAudioRef.current.currentTime = 0;
+      } catch {
+        // Ignore browser audio edge cases while moving to the next question.
+      }
+      endedGroupKeyRef.current = null;
+      setExamAudioPlaying(false);
+      setExamAudioBlocked(false);
     }
     goToNext();
   };
@@ -904,9 +915,9 @@ export default function ExamSection({ section, onFlowNext, onFlowPrev, onExit })
     setReadingCommentDraft('');
     setReadingPendingComment(null);
   };
-  // Strict listening normally auto-advances; allow the candidate to press Next
-  // early, but only once the recording has finished playing.
-  const nextDisabled = strict && !isReading && !examAudioEnded;
+  // Strict listening still auto-advances, but candidates can skip the current
+  // recording and move on immediately.
+  const nextDisabled = false;
 
   return (
     <div className={`et et-screen${section === 'reading' ? ' et-screen--white' : ''}`}>
