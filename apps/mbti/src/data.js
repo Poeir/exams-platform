@@ -11,7 +11,7 @@
 export const SCENARIOS = [
   {
     id: 'q1',
-    format: 'mcq',
+    format: 'mcq',
     label: 'งานใหม่',
     title: 'ได้รับงานใหม่ที่เป้าหมายยังไม่ชัด',
     context: 'คุณได้รับเรื่องสำคัญที่ต้องทำให้เสร็จในเวลาที่กำหนด แต่รายละเอียดยังไม่ครบ และคนที่ขอให้ทำก็ยังบอกไม่ละเอียดนัก',
@@ -257,7 +257,7 @@ export const TYPES = {
     typeNameEn: 'Architect',
     variant: 'INTJ-A / INTJ-T',
     highlights: ['คิดเชิงกลยุทธ์', 'วางแผนระยะยาว', 'มองระบบให้ดีขึ้น'],
-    style: 'สถาปนิก',
+    style: 'นักออกแบบ',
     styleEn: 'INTJ-A / INTJ-T',
     mascot: 'intj',
     tagline:
@@ -447,7 +447,7 @@ export const TYPES = {
     typeNameEn: 'Advocate',
     variant: 'INFJ-A / INFJ-T',
     highlights: ['เข้าใจแรงจูงใจ', 'มองเห็นความหมาย', 'สร้างแรงบันดาลใจ'],
-    style: 'ผู้สนับสนุน',
+    style: 'นักสนับสนุน',
     styleEn: 'INFJ-A / INFJ-T',
     mascot: 'infj',
     tagline:
@@ -495,7 +495,7 @@ INFP: {
   typeNameEn: 'Mediator',
   variant: 'INFP-A / INFP-T',
   highlights: ['ยึดคุณค่า', 'เห็นอกเห็นใจ', 'สร้างสรรค์อย่างมีความหมาย'],
-  style: 'ผู้ไกล่เกลี่ย',
+  style: 'นักเจรจา',
   styleEn: 'INFP-A / INFP-T',
   mascot: 'infp',
   tagline:
@@ -543,7 +543,7 @@ ENFJ: {
   typeNameEn: 'Protagonist',
   variant: 'ENFJ-A / ENFJ-T',
   highlights: ['เชื่อมคนในทีม', 'สื่อสารโน้มน้าว', 'ดึงศักยภาพคน'],
-  style: 'ผู้เป็นตัวเอก',
+  style: 'ผู้นำ',
   styleEn: 'ENFJ-A / ENFJ-T',
   mascot: 'enfj',
   tagline:
@@ -589,7 +589,7 @@ ENFJ: {
   typeNameEn: 'Campaigner',
   variant: 'ENFP-A / ENFP-T',
   highlights: ['จุดประกายไอเดีย', 'พลังบวกสูง', 'เห็นโอกาสใหม่'],
-  style: 'นักรณรงค์',
+  style: 'นักประชาสัมพันธ์',
   styleEn: 'ENFP-A / ENFP-T',
   mascot: 'enfp',
   tagline:
@@ -637,7 +637,7 @@ ISTJ: {
   typeNameEn: 'Logistician',
   variant: 'ISTJ-A / ISTJ-T',
   highlights: ['รับผิดชอบสูง', 'ยึดข้อเท็จจริง', 'จัดระบบงานดี'],
-  style: 'นักคำนวณ',
+  style: 'นักวางแผน',
   styleEn: 'ISTJ-A / ISTJ-T',
   mascot: 'istj',
   tagline:
@@ -732,7 +732,7 @@ ESTJ: {
   typeNameEn: 'Executive',
   variant: 'ESTJ-A / ESTJ-T',
   highlights: ['บริหารงานชัด', 'จัดลำดับเก่ง', 'พาทีมปิดงาน'],
-  style: 'ผู้บริหาร',
+  style: 'นักบริหาร',
   styleEn: 'ESTJ-A / ESTJ-T',
   mascot: 'estj',
   tagline:
@@ -776,10 +776,10 @@ ESFJ: {
   code: 'ESFJ',
   role: 'Sentinels',
   roleTh: 'ผู้พิทักษ์',
-  typeNameEn: 'Consul',
+  typeNameEn: 'Consultant',
   variant: 'ESFJ-A / ESFJ-T',
   highlights: ['ประสานทีมดี', 'ใส่ใจบรรยากาศ', 'พร้อมช่วยเหลือ'],
-  style: 'ผู้ให้คำปรึกษา',
+  style: 'ที่ปรึกษา',
   styleEn: 'ESFJ-A / ESFJ-T',
   mascot: 'esfj',
   tagline:
@@ -827,7 +827,7 @@ ISTP: {
   typeNameEn: 'Virtuoso',
   variant: 'ISTP-A / ISTP-T',
   highlights: ['แก้ปัญหาเฉพาะหน้า', 'ลงมือทำจริง', 'นิ่งเมื่อมีปัญหา'],
-  style: 'ผู้มีความสามารถโดดเด่น',
+  style: 'อัจฉริยะ',
   styleEn: 'ISTP-A / ISTP-T',
   mascot: 'istp',
   tagline:
@@ -922,7 +922,7 @@ ESTP: {
   typeNameEn: 'Entrepreneur',
   variant: 'ESTP-A / ESTP-T',
   highlights: ['ลงมือไว', 'อ่านสถานการณ์เร็ว', 'ชอบความท้าทายจริง'],
-  style: 'ผู้ประกอบการ',
+  style: 'นักธุรกิจ',
   styleEn: 'ESTP-A / ESTP-T',
   mascot: 'estp',
   tagline:
@@ -969,7 +969,7 @@ ESFP: {
   typeNameEn: 'Entertainer',
   variant: 'ESFP-A / ESFP-T',
   highlights: ['เติมพลังทีม', 'เชื่อมคนง่าย', 'สร้างบรรยากาศดี'],
-  style: 'ผู้มอบความบันเทิง',
+  style: 'นักสานสัมพันธ์',
   styleEn: 'ESFP-A / ESFP-T',
   mascot: 'esfp',
   tagline:
