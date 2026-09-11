@@ -65,7 +65,7 @@ A single test-wide clock governs real runs: `startExamTimer()` stamps `examStart
 
 ### Theming
 
-Plain CSS in `src/styles/` (`colors-and-type.css` + `styles.css`) with CSS custom properties (`--color-primary`, `--bg-app`, `--fg-*`, `--gf-*`). The dev-only `TweaksPanel` (bottom-right) live-switches brand color, atmosphere, and corner style via a `<style id="__tweaks-css">` tag written by `buildCSS` in `App.jsx`. The base `.et` class scopes the brand variables. Custom Gofive fonts live in `public/fonts/`, declared in `src/styles/colors-and-type.css`.
+Plain CSS in `src/styles/` (`colors-and-type.css` + `styles.css`) with CSS custom properties (`--color-primary`, `--bg-app`, `--fg-*`, `--gf-*`). The dev-only `TweaksPanel` (bottom-right) live-switches brand color, atmosphere, and corner style via a `<style id="__tweaks-css">` tag written by `buildCSS` in `App.jsx`. The base `.et` class scopes the brand variables. Custom brand fonts lived in `public/fonts/`, declared in `src/styles/colors-and-type.css`.
 
 ## Backend (`server/`)
 

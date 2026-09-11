@@ -12,7 +12,7 @@
 // MI config below is the only way this engine reaches the DB.
 
 const dbSettings = {
-  host: 'gofive.database.windows.net', // Azure SQL server FQDN
+  host: 'your-sql-server.database.windows.net', // Azure SQL server FQDN (redacted for portfolio copy)
   port: 1433,
   database: process.env.DB_DATABASE || 'examo_dev', // the only env-driven DB field
   encrypt: true, // required by Azure SQL

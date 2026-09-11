@@ -1,44 +1,8 @@
-/* IBM Plex Sans Thai — fallback when Gofive is unavailable */
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap');
 
 /* ============================================================
    Venio Design System — Colors & Type Tokens
-   Source: DESIGN-gofive-venio-v2.md
    ============================================================ */
-
-/* ---------- Gofive font (bundled .woff + local() fallback) ---------- */
-@font-face {
-  font-family: 'Gofive';
-  src: local('Gofive'), local('Gofive-Regular'), local('Gofive Text'),
-       url('fonts/Gofive-Text.woff') format('woff');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Gofive';
-  src: local('Gofive Medium'), local('Gofive-Medium'),
-       url('fonts/Gofive-Medium.woff') format('woff');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Gofive';
-  src: local('Gofive SemiBold'), local('Gofive-SemiBold'), local('Gofive Semibold'),
-       url('fonts/Gofive-Semi_Bold.woff') format('woff');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Gofive';
-  src: local('Gofive Bold'), local('Gofive-Bold'),
-       url('fonts/Gofive-Bold.woff') format('woff');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
 
 :root {
   /* ===== Brand primary — Venio ===== */
@@ -106,7 +70,7 @@
   --border-dark: rgba(255, 255, 255, 0.08);
 
   /* ===== Typography ===== */
-  --font-sans: "Gofive", "IBM Plex Sans Thai", "Sarabun",
+  --font-sans: "IBM Plex Sans Thai", "Sarabun",
                -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   /* Type ladder — sizes / line-heights (v2: body 16/24) */

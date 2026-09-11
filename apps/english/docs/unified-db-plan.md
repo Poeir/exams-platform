@@ -35,7 +35,7 @@
 
 ## Phase 0 — เตรียม + ตัดสิน schema ownership
 
-1. Provision Azure SQL database เดียว (เช่น `gofive_assessments`)
+1. Provision Azure SQL database เดียว (เช่น `exams_assessments`)
 2. โมเดล ownership (เลือก **A**):
    - **A. Owner เดียว (แนะนำ):** repo หนึ่งเป็นเจ้าของ migration ของตารางร่วม รัน `prisma migrate` ที่เดียว; อีก service ใช้ `prisma db pull` + `generate` แล้ว query อย่างเดียว → ได้ ledger `_prisma_migrations` ฟรี
    - B. แยก SQL Server schema (`mbti.*`/`english.*`/`shared.*`) + Prisma multiSchema (ไว้ทำตอนทีมโต)

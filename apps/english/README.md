@@ -1,8 +1,8 @@
 # english-test
 
-TOEIC-style English proficiency test web app with Gofive branding. A React 18 + Vite single-page app for taking the exam, paired with an Express + Prisma (SQL Server / Azure SQL) backend that stores exam content, manages candidate attempts, scores submissions server-side (TOEIC-style + CEFR level), and can be launched from a parent site via one-time session tokens. Exam content is authored through a built-in admin UI.
+TOEIC-style English proficiency test web app. A React 18 + Vite single-page app for taking the exam, paired with an Express + Prisma (SQL Server / Azure SQL) backend that stores exam content, manages candidate attempts, scores submissions server-side (TOEIC-style + CEFR level), and can be launched from a parent site via one-time session tokens. Exam content is authored through a built-in admin UI.
 
-> This app lives in `apps/english` of the **gofive-exams** monorepo and is normally mounted at `/english` behind the path-routing gateway (see the repo-root `README.md`). Everything below also works standalone for development.
+> This app lives in `apps/english` of the **exams-platform** monorepo and is normally mounted at `/english` behind the path-routing gateway (see the repo-root `README.md`). Everything below also works standalone for development.
 
 ## Repository layout
 
@@ -77,7 +77,7 @@ The frontend needs no env file — public config (just an `uploadEnabled` flag f
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | SQL Server connection string (shared `gofive_assessments` DB on `localhost:1433`) |
+| `DATABASE_URL` | SQL Server connection string (shared `exams_assessments` DB on `localhost:1433`) |
 | `PORT` | API port (`3002` for standalone dev — the code default `3001` collides with mbti) |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | HTTP Basic credentials for the admin UI and admin-only API routes (unset = admin disabled, 503) |
 | `PARENT_API_KEY` | Shared secret (`X-API-Key`) for server-to-server calls and signed result webhooks |
@@ -172,7 +172,7 @@ Plain CSS in `src/styles/` (`colors-and-type.css` + `styles.css`) using CSS cust
 
 ## Backend
 
-Express + Prisma over SQL Server / Azure SQL. The Vite dev server proxies `/api/*` to `http://localhost:3002`. The database is the **shared** `gofive_assessments` DB (SQL Server on `localhost:1433`, container defined in `../mbti/docker-compose.yml`); this app owns the migration ledger for the `english` + `shared` schemas — see `server/README.md` for the schema-ownership rules. The Express `app` is built in `server/src/app.js` and exported (the gateway mounts it at `/english`); `server/src/index.js` is the standalone entrypoint.
+Express + Prisma over SQL Server / Azure SQL. The Vite dev server proxies `/api/*` to `http://localhost:3002`. The database is the **shared** `exams_assessments` DB (SQL Server on `localhost:1433`, container defined in `../mbti/docker-compose.yml`); this app owns the migration ledger for the `english` + `shared` schemas — see `server/README.md` for the schema-ownership rules. The Express `app` is built in `server/src/app.js` and exported (the gateway mounts it at `/english`); `server/src/index.js` is the standalone entrypoint.
 
 ### Content routes (admin UI)
 
@@ -264,7 +264,7 @@ For UI changes, manually verify the full flow: landing → audio check → liste
 - `english-test-remix/` (if present) is a Claude Design handoff bundle and is gitignored — treat as a read-only design reference.
 - `papers_export_1_full.json` (full paper) and `papers_export_2_short.json` (15-min short placement paper) are the seed sources loaded by the `seed` route / `npm run seed`. Both are **gitignored** (they contain answer keys); seeding happens out-of-band from a machine that has them.
 - `public/voice/*.mp3` filenames are referenced by `PART_AUDIO` in `src/data/exam.js`. Rename in lockstep.
-- Custom Gofive fonts live in `public/fonts/` and are declared in `src/styles/colors-and-type.css`.
+- Custom brand fonts lived in `public/fonts/` and are declared in `src/styles/colors-and-type.css`.
 
 ## Commit conventions
 

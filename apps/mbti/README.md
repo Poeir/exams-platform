@@ -4,7 +4,7 @@
 
 โปรเจกต์นี้ประกอบด้วย **frontend (React + Vite)**, **backend API (Express)** และ **Azure SQL / SQL Server** (เข้าถึงผ่าน **Prisma ORM**) สำหรับเก็บผลการทำแบบทดสอบ
 
-> แอปนี้อยู่ที่ `apps/mbti` ใน monorepo **gofive-exams** และตอน deploy จะถูก mount ที่ `/mbti` หลัง gateway (ดู `README.md` ที่ root ของ repo) — ใช้ **ฐานข้อมูลร่วม `gofive_assessments`** กับ english engine โดย mbti เป็นเจ้าของเฉพาะ schema `mbti` ผ่าน SQL scripts (ห้ามรัน `prisma migrate` กับฐานร่วม) ทุกอย่างด้านล่างยังรันแบบ standalone สำหรับ dev ได้ตามเดิม
+> แอปนี้อยู่ที่ `apps/mbti` ใน monorepo **exams-platform** และตอน deploy จะถูก mount ที่ `/mbti` หลัง gateway (ดู `README.md` ที่ root ของ repo) — ใช้ **ฐานข้อมูลร่วม `exams_assessments`** กับ english engine โดย mbti เป็นเจ้าของเฉพาะ schema `mbti` ผ่าน SQL scripts (ห้ามรัน `prisma migrate` กับฐานร่วม) ทุกอย่างด้านล่างยังรันแบบ standalone สำหรับ dev ได้ตามเดิม
 
 ---
 
@@ -14,7 +14,7 @@
 - **Backend:** Node.js + Express 5
 - **Database:** Azure SQL / SQL Server (local: Azure SQL Edge via Docker)
 - **ORM:** Prisma 6 (schema เดียวที่ `prisma/schema.prisma`, สลับ provider ได้)
-- **Styling:** Plain CSS + Gofive design tokens (`src/styles/colors_and_type.css`), IBM Plex Sans Thai
+- **Styling:** Plain CSS + brand design tokens (`src/styles/colors_and_type.css`), IBM Plex Sans Thai
 
 ---
 
@@ -42,8 +42,8 @@ docker --version
 ### 1. Clone repo และเข้าโฟลเดอร์
 
 ```powershell
-git clone <repo-url> gofive-exams
-cd gofive-exams\apps\mbti
+git clone <repo-url> exams-platform
+cd exams-platform\apps\mbti
 ```
 
 ### 2. ติดตั้ง dependencies
@@ -60,10 +60,10 @@ npm install
 Copy-Item .env.example .env
 ```
 
-ตัวอย่างค่าใน `.env` (ค่า default ใช้งานได้กับ docker-compose ที่ให้มา — จำเป็นจริง ๆ มีแค่ `DATABASE_URL` ที่ชี้ฐานร่วม `gofive_assessments`):
+ตัวอย่างค่าใน `.env` (ค่า default ใช้งานได้กับ docker-compose ที่ให้มา — จำเป็นจริง ๆ มีแค่ `DATABASE_URL` ที่ชี้ฐานร่วม `exams_assessments`):
 
 ```env
-DATABASE_URL=sqlserver://localhost:1433;database=gofive_assessments;user=sa;password=Your_password123;encrypt=true;trustServerCertificate=true
+DATABASE_URL=sqlserver://localhost:1433;database=exams_assessments;user=sa;password=Your_password123;encrypt=true;trustServerCertificate=true
 # ค่าอื่นมี dev default ใน server/config.js — override ได้ตามต้องการ:
 # PORT=3001
 # FRONTEND_URL=http://localhost:5174
@@ -96,7 +96,7 @@ docker compose ps
 
 ### 5. สร้าง schema + Prisma Client
 
-ฐานข้อมูล `gofive_assessments` เป็น**ฐานร่วม** — แบ่งความเป็นเจ้าของ schema ชัดเจน:
+ฐานข้อมูล `exams_assessments` เป็น**ฐานร่วม** — แบ่งความเป็นเจ้าของ schema ชัดเจน:
 
 - schema `english` + `shared` (รวมตาราง `shared.subjects`) — english เป็นเจ้าของ migration ledger: รัน `npm run migrate` จาก `../english/server` (ดู `../english/server/README.md`)
 - schema `mbti` — apply ด้วย **SQL scripts** ใน `prisma/` ตามลำดับ: `mbti-tables.sql` → `phase2-transfer.sql` → `merge-results.sql` → `add-webhook-delivery.sql` (รันผ่าน Azure Data Studio / `sqlcmd`)
@@ -189,8 +189,8 @@ apps/mbti/
 │   │   └── base.js           # base-path helpers (standalone '' / gateway '/mbti')
 │   └── styles/
 │       ├── app.css           # layout + screen styles
-│       ├── colors_and_type.css  # Gofive design tokens
-│       └── fonts/            # Gofive custom font files
+│       ├── colors_and_type.css  # Brand design tokens
+│       └── fonts/            # Custom font files
 ├── server/                   # Express backend
 │   ├── app.js                # Express app (routes + middleware) — export ให้ gateway mount
 │   ├── index.js              # standalone entrypoint (listen :3001 + graceful shutdown)
@@ -244,7 +244,7 @@ landing → purpose → quiz → loading-result → result
 - เก็บ **facets** 16 ค่า (initiating, deepFocus, empathetic, ...) แยกต่างหาก
 - กำหนด **confidence**: `midzone` (<55%), `slight` (55–65%), `clear` (65–80%), `veryClear` (80%+)
 
-### Persistence (2 ตาราง บนฐานร่วม `gofive_assessments`)
+### Persistence (2 ตาราง บนฐานร่วม `exams_assessments`)
 
 - `shared.subjects` — map parent identity → internal subject (source_system + external_user_id) — ใช้ร่วมกับ english engine (migration ledger เป็นของ english)
 - `mbti.attempts` — แต่ละครั้งของการทำแบบทดสอบ + hash ของ opaque token + **ผล MBTI ที่ backend คำนวณซ้ำ** (ตาราง results เดิมถูก merge เข้ามาด้วย `merge-results.sql`; คอลัมน์ webhook delivery เพิ่มโดย `add-webhook-delivery.sql`)
@@ -385,7 +385,7 @@ DevPanel จะหายไปอัตโนมัติใน production build
 ## Brand & Styling Notes
 
 - `src/styles/app.css` reuse Venio token name **`--color-bluetiful`** เก็บ empeo orange `#F05B2F` — อย่าเปลี่ยนชื่อโดยไม่ sweep ทั้งไฟล์
-- Custom Gofive font weights (Text=400, Medium=500, Semi-Bold=600, Bold=700) + IBM Plex Sans Thai fallback อยู่ใน `src/styles/fonts/`
+- Custom brand font weights (Text=400, Medium=500, Semi-Bold=600, Bold=700) + IBM Plex Sans Thai fallback อยู่ใน `src/styles/fonts/`
 - Mascot PNGs อยู่ใน `public/mascots/` และอ้างอิงผ่าน `withBase('/mascots/chart.png')` จาก `src/lib/base.js` — เพื่อให้ทำงานได้ทั้ง standalone และตอน mount ที่ `/mbti` หลัง gateway
 
 ---

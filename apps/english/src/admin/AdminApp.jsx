@@ -151,9 +151,9 @@ export default function AdminApp() {
       <header className="et-admin__header">
         <div className="et-admin__brand">
           <div className="et-admin__identity">
-            <span className="et-topbar__brand-mark">G</span>
+            <span className="et-topbar__brand-mark">E</span>
             <span className="et-topbar__brand-name">
-              Gofive <span className="et-pipe">|</span><span className="et-sub">Exam Admin</span>
+              Exams <span className="et-pipe">|</span><span className="et-sub">Exam Admin</span>
             </span>
           </div>
           {view === 'content' && (

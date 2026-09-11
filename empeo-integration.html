@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gofive Exams × Empeo — Integration Guide</title>
+<title>Exams Platform × Empeo — Integration Guide</title>
 <style>
   :root {
     --orange: #F05B2F;
@@ -234,7 +234,7 @@
 
 <header class="hero">
   <div class="wrap">
-    <h1>Gofive Exams <span class="x">×</span> Empeo — Integration Guide</h1>
+    <h1>Exams Platform <span class="x">×</span> Empeo — Integration Guide</h1>
     <p>คู่มือการเชื่อมต่อระบบแบบทดสอบ (English Proficiency Test + MBTI Assessment) สำหรับทีม Empeo
        — อธิบายภาพรวมของระบบ, API ที่ต้องเรียก และวิธีรับผลสอบกลับไปเก็บ</p>
     <div class="meta-chips">
@@ -270,7 +270,7 @@
 <section id="overview">
   <h2>1. ระบบนี้คืออะไร</h2>
   <div class="card">
-    <p><strong>Gofive Exams</strong> คือระบบแบบทดสอบสำหรับพนักงาน/ผู้สมัครงาน
+    <p><strong>Exams Platform</strong> คือระบบแบบทดสอบสำหรับพนักงาน/ผู้สมัครงาน
        มีข้อสอบ 2 ชนิดอยู่ในระบบเดียวกัน (ในเอกสารนี้เรียกข้อสอบแต่ละชนิดว่า <strong>engine</strong>):</p>
     <table>
       <tr><th style="width:170px">Engine</th><th>คืออะไร</th><th style="width:220px">ผลลัพธ์ที่ได้</th></tr>
@@ -315,7 +315,7 @@
     </div>
     <div class="col">
       <div class="gatewaybox">
-        <div class="gtitle">Gofive Exams — 1 Container (Gateway :3000)</div>
+        <div class="gtitle">Exams Platform — 1 Container (Gateway :3000)</div>
         <div class="route"><code>/english/*</code> → English Engine (API + หน้าเว็บข้อสอบ)</div>
         <div class="route"><code>/mbti/*</code> → MBTI Engine (API + หน้าเว็บแบบประเมิน)</div>
         <div class="route"><code>/api/health</code> → เช็คสถานะรวมทั้งระบบ (health check)</div>
@@ -700,7 +700,7 @@ window.parent.postMessage({
 
   <h3>7.4 ตัวอย่าง listener ฝั่ง Empeo</h3>
 <pre><span class="c">// หน้าเว็บ Empeo ที่ฝัง iframe</span>
-const EXAM_APP_ORIGIN = <span class="s">"https://exam.gofive.co.th"</span>;  <span class="c">// origin ของระบบข้อสอบ</span>
+const EXAM_APP_ORIGIN = <span class="s">"https://exam.example.com"</span>;  <span class="c">// origin ของระบบข้อสอบ</span>
 
 window.addEventListener(<span class="s">"message"</span>, async (event) =&gt; {
   <span class="k">if</span> (event.origin !== EXAM_APP_ORIGIN) <span class="k">return</span>;        <span class="c">// ★ ตรวจ origin ผู้ส่ง</span>
@@ -834,7 +834,7 @@ window.addEventListener(<span class="s">"message"</span>, async (event) =&gt; {
   <h2>12. Environments &amp; เอกสารเพิ่มเติม</h2>
   <table>
     <tr><th>Environment</th><th>Base URL</th><th>หมายเหตุ</th></tr>
-    <tr><td>DEV</td><td><code>https://exam-dev.gofive.co.th</code> <span class="muted small">(ตัวอย่าง — URL จริงจะแจ้งอีกครั้ง)</span></td><td>ทดสอบ integration</td></tr>
+    <tr><td>DEV</td><td><code>https://exam-dev.example.com</code> <span class="muted small">(ตัวอย่าง — URL จริงจะแจ้งอีกครั้ง)</span></td><td>ทดสอบ integration</td></tr>
     <tr><td>UAT</td><td><span class="muted">จะแจ้งภายหลัง</span></td><td></td></tr>
     <tr><td>PROD</td><td><span class="muted">จะแจ้งภายหลัง</span></td><td>key คนละตัวกับ DEV/UAT</td></tr>
   </table>

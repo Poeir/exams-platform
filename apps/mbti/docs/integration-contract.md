@@ -32,7 +32,7 @@ Configure the backend (or use `.env` — the npm scripts load it via
 `--env-file-if-exists`), apply the schema, and start the API:
 
 ```powershell
-$env:DATABASE_URL='sqlserver://localhost:1433;database=gofive_assessments;user=sa;password=Your_password123;encrypt=true;trustServerCertificate=true'
+$env:DATABASE_URL='sqlserver://localhost:1433;database=exams_assessments;user=sa;password=Your_password123;encrypt=true;trustServerCertificate=true'
 $env:PARENT_API_KEY='dev-parent-key'
 # Schema: english owns the `english` + `shared` ledgers (run `npm run migrate`
 # in ../english/server); the `mbti` schema is applied via the SQL scripts in
@@ -60,7 +60,7 @@ npm run api:smoke
 
 Model: `prisma/schema.prisma` (introspection-style — the DDL source of truth
 is the SQL scripts in `prisma/`). Two tables on the shared
-`gofive_assessments` database:
+`exams_assessments` database:
 
 ```text
 shared.subjects

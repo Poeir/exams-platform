@@ -1,7 +1,7 @@
 # english-test backend
 
 Express + Prisma (SQL Server / Azure SQL) backend for the exam engine + content
-admin. Shares one database (`gofive_assessments`) with the mbti
+admin. Shares one database (`exams_assessments`) with the mbti
 service (`apps/mbti`) — see `../docs/unified-db-plan.md` for the
 schema-ownership model.
 
@@ -13,7 +13,7 @@ docker compose -f ../../mbti/docker-compose.yml up -d
 
 # 2. Install deps (postinstall runs `prisma generate`)
 npm install
-cp .env.example .env        # DATABASE_URL points at localhost:1433 / gofive_assessments
+cp .env.example .env        # DATABASE_URL points at localhost:1433 / exams_assessments
 
 # 3. Apply the schema (this repo owns the `english` + `shared` schemas)
 npm run migrate          # prisma migrate deploy

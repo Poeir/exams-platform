@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Gofive Parent System (mock empeo)",
-    "description": "เล่นบทระบบแม่ยิงเข้า gofive-exams (container เดียว :3000)\n\n- english อยู่ใต้ {{base}}/english\n- mbti อยู่ใต้ {{base}}/mbti\n- ใช้ X-API-Key เดียวกันทั้งสอง engine ({{parent_api_key}})\n- ทุก field ฝั่ง parent เป็น camelCase และ status ตอนจบคือ completed — เหมือนกันทั้งสอง engine\n- ข้อสอบ English มี 2 ชุด: ชุดเต็ม (Listening+Reading, 50 ข้อ) และชุดสั้น 15 นาที (20 ข้อ) — คนละ paperId, เกณฑ์ระดับคนละตาราง\n\nลำดับการยิง:\n1. English / Get Papers  → เซฟ paper_id_full + paper_id_short อัตโนมัติ\n2. English / Create Session (เลือกข้อ 2 ชุดเต็ม หรือ 2.1 ชุดสั้น) → ได้ launchUrl เปิดให้ผู้สอบ\n3. MBTI / Create Attempt → ได้ launchUrl เปิดให้ผู้สอบ\n4. (ผู้สอบทำข้อสอบในเบราว์เซอร์)\n5. English / Get Attempt → ดูสถานะ/ผล\n6. MBTI / Subject Results → ระบบแม่ดึงผล MBTI\n\nWebhook ของทั้งสองรับใน Postman ไม่ได้ (Postman เป็นฝั่งยิงอย่างเดียว) — ใช้ webhook.site หรือ endpoint ของระบบแม่จริง (โค้ดตัวอย่าง receiver อยู่ใน empeo-integration.html หัวข้อ 7.4)",
+    "name": "Parent System (mock empeo)",
+    "description": "เล่นบทระบบแม่ยิงเข้า exams-platform (container เดียว :3000)\n\n- english อยู่ใต้ {{base}}/english\n- mbti อยู่ใต้ {{base}}/mbti\n- ใช้ X-API-Key เดียวกันทั้งสอง engine ({{parent_api_key}})\n- ทุก field ฝั่ง parent เป็น camelCase และ status ตอนจบคือ completed — เหมือนกันทั้งสอง engine\n- ข้อสอบ English มี 2 ชุด: ชุดเต็ม (Listening+Reading, 50 ข้อ) และชุดสั้น 15 นาที (20 ข้อ) — คนละ paperId, เกณฑ์ระดับคนละตาราง\n\nลำดับการยิง:\n1. English / Get Papers  → เซฟ paper_id_full + paper_id_short อัตโนมัติ\n2. English / Create Session (เลือกข้อ 2 ชุดเต็ม หรือ 2.1 ชุดสั้น) → ได้ launchUrl เปิดให้ผู้สอบ\n3. MBTI / Create Attempt → ได้ launchUrl เปิดให้ผู้สอบ\n4. (ผู้สอบทำข้อสอบในเบราว์เซอร์)\n5. English / Get Attempt → ดูสถานะ/ผล\n6. MBTI / Subject Results → ระบบแม่ดึงผล MBTI\n\nWebhook ของทั้งสองรับใน Postman ไม่ได้ (Postman เป็นฝั่งยิงอย่างเดียว) — ใช้ webhook.site หรือ endpoint ของระบบแม่จริง (โค้ดตัวอย่าง receiver อยู่ใน empeo-integration.html หัวข้อ 7.4)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -74,7 +74,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"paperId\": \"{{paper_id_full}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"sourceSystem\": \"{{source_system}}\",\n  \"email\": \"{{external_user_id}}@gofive.co.th\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\",\n  \"avatarUrl\": \"{{avatar_url}}\",\n  \"role\": \"{{role}}\"\n}"
+          "raw": "{\n  \"paperId\": \"{{paper_id_full}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"sourceSystem\": \"{{source_system}}\",\n  \"email\": \"{{external_user_id}}@example.com\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\",\n  \"avatarUrl\": \"{{avatar_url}}\",\n  \"role\": \"{{role}}\"\n}"
         },
         "url": "{{base}}/english/api/sessions"
       },
@@ -106,7 +106,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"paperId\": \"{{paper_id_short}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"sourceSystem\": \"{{source_system}}\",\n  \"email\": \"{{external_user_id}}@gofive.co.th\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\",\n  \"avatarUrl\": \"{{avatar_url}}\",\n  \"role\": \"{{role}}\"\n}"
+          "raw": "{\n  \"paperId\": \"{{paper_id_short}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"sourceSystem\": \"{{source_system}}\",\n  \"email\": \"{{external_user_id}}@example.com\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\",\n  \"avatarUrl\": \"{{avatar_url}}\",\n  \"role\": \"{{role}}\"\n}"
         },
         "url": "{{base}}/english/api/sessions"
       },
@@ -138,7 +138,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"sourceSystem\": \"{{source_system}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"email\": \"{{external_user_id}}@gofive.co.th\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\"\n}"
+          "raw": "{\n  \"sourceSystem\": \"{{source_system}}\",\n  \"externalUserId\": \"{{external_user_id}}\",\n  \"email\": \"{{external_user_id}}@example.com\",\n  \"displayName\": \"Khun Postman Test\",\n  \"callbackUrl\": \"{{callback_url}}\"\n}"
         },
         "url": "{{base}}/mbti/api/v1/assessment-attempts"
       },

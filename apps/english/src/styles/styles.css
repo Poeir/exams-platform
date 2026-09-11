@@ -1,4 +1,4 @@
-/* English Test — Gofive parent brand */
+/* English Test — brand tokens */
 
 * { box-sizing: border-box; }
 html, body, #root { margin: 0; padding: 0; height: 100%; }
@@ -11,13 +11,13 @@ body {
 }
 
 .et {
-  --color-primary: var(--brand-gofive-orange);
+  --color-primary: var(--brand-primary-orange);
   --color-primary-hover: #DD6010;
   --color-primary-pressed: #BC500C;
   --color-primary-soft: #FFEEDF;
   --color-primary-tint: #FFF6EE;
   --color-primary-on: #FFFFFF;
-  --border-focus: var(--brand-gofive-orange);
+  --border-focus: var(--brand-primary-orange);
   --focus-ring: 0 0 0 3px rgba(248, 112, 20, 0.20);
 }
 

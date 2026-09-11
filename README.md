@@ -1,6 +1,6 @@
-# gofive-exams
+# exams-platform
 
-ONE container hosting both Gofive assessment engines behind a path-routing
+ONE container hosting both assessment engines behind a path-routing
 gateway, sharing one SQL Server database:
 
 ```
@@ -31,7 +31,7 @@ and the mbti assessment (`/mbti/`). `/english/` remains a working alias for
 the full landing.
 
 > **อย่าใช้ `npm --prefix <dir> install`** — npm บน Windows จะยัด root package
-> (`"gofive-exams": "file:.."`) เข้าไปใน package.json/lockfile ของแอป แล้ว
+> (`"exams-platform": "file:.."`) เข้าไปใน package.json/lockfile ของแอป แล้ว
 > Docker build จะพังด้วย EUSAGE. ใช้ `npm run install:all` หรือ `cd` เข้าไปติดตั้ง.
 
 ## Standalone dev (per app, hot reload)
@@ -58,7 +58,7 @@ apps) is a no-op, so standalone behaviour is unchanged.
   mbti under `<host>/mbti/api/v1/...` — see each app's Swagger at
   `/english/api/docs` and `/mbti/api/docs`.
 - `PUBLIC_BASE_URL` = the gateway origin browsers see (e.g.
-  `https://exam.gofive.co.th`); each engine derives its own URL from it
+  `https://exam.example.com`); each engine derives its own URL from it
   (`<base>/english`, `<base>/mbti`) when minting `launchUrl` / view links.
   Per-engine `ENGINE_PUBLIC_URL` / `FRONTEND_URL` remain as overrides.
 - Postman collection: `postman-api-for-parent/` at the repo root
@@ -68,7 +68,7 @@ apps) is a no-op, so standalone behaviour is unchanged.
 
 ## Database
 
-Shared DB (`gofive_assessments` local / `examo_*` on Azure):
+Shared DB (`exams_assessments` local / `examo_*` on Azure):
 - english owns the migration ledger for the `english` + `shared` schemas
   (`apps/english/server`: `npm run migrate` + `npm run seed`).
 - mbti owns the `mbti` schema via SQL scripts only (`apps/mbti/prisma/`:

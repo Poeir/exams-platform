@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-ONE container hosting both Gofive assessment engines behind a path-routing Express gateway, sharing one SQL Server database:
+ONE container hosting both assessment engines behind a path-routing Express gateway, sharing one SQL Server database:
 
 - `/english/*` → `apps/english` — English proficiency test (API + React SPA)
 - `/mbti/*` → `apps/mbti` — MBTI workplace assessment (API + React SPA)
@@ -25,7 +25,7 @@ npm run dev             # gateway with --watch
 npm test                # english vitest suite (the only tests in the repo)
 ```
 
-- **Never use `npm --prefix <dir> install`** — npm on Windows injects the root package (`"gofive-exams": "file:.."`) into the app's package.json/lockfile and the Docker build then fails with EUSAGE. Use `npm run install:all` or `cd` into the directory.
+- **Never use `npm --prefix <dir> install`** — npm on Windows injects the root package (`"exams-platform": "file:.."`) into the app's package.json/lockfile and the Docker build then fails with EUSAGE. Use `npm run install:all` or `cd` into the directory.
 - Single test file: `cd apps/english && npx vitest run server/src/scoring.test.js` (vitest picks up `apps/english/src/**/*.test.{js,jsx}` + `apps/english/server/**/*.test.js`; currently `scoring`, `shape`, `cefr` in `server/src/` and `src/data/exam.test.js`).
 - Standalone per-app dev (hot reload, unchanged from before the merge): english server `cd apps/english/server && npm run dev` (:3002) + `cd apps/english && npm run dev` (Vite); mbti `cd apps/mbti && npm run server` (:3001) + `npm run dev` (Vite :5174).
 
@@ -39,7 +39,7 @@ Both SPAs are built with `vite build --base=/<prefix>/`; each app's `src/lib/bas
 
 ## Database (shared, schema ownership split)
 
-One database (`gofive_assessments` local / `examo_dev` on Azure — both engines point at the SAME db):
+One database (`exams_assessments` local / `examo_dev` on Azure — both engines point at the SAME db):
 
 - **english** owns the migration ledger for the `english` + `shared` schemas: `cd apps/english/server` then `npm run migrate` + `npm run seed`.
 - **mbti** owns the `mbti` schema via SQL scripts only (`apps/mbti/prisma/`: mbti-tables.sql → phase2-transfer.sql → merge-results.sql → add-webhook-delivery.sql). **Never run `prisma migrate dev` / `db push` from mbti** — its Prisma schema is introspection-style, not the source of truth for DDL.

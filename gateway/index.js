@@ -180,7 +180,7 @@ gateway.get('/', (_req, res) => {
       </a>
     </div>
   </div>
-  <footer>powered by <strong>empeo</strong> · Gofive Assessments</footer>
+  <footer>powered by <strong>empeo</strong> · Assessments Platform</footer>
 </body>
 </html>`);
 });
