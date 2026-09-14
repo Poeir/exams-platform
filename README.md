@@ -30,9 +30,10 @@ Open http://localhost:3000 — the landing page links to the full english test
 and the mbti assessment (`/mbti/`). `/english/` remains a working alias for
 the full landing.
 
-> **อย่าใช้ `npm --prefix <dir> install`** — npm บน Windows จะยัด root package
-> (`"exams-platform": "file:.."`) เข้าไปใน package.json/lockfile ของแอป แล้ว
-> Docker build จะพังด้วย EUSAGE. ใช้ `npm run install:all` หรือ `cd` เข้าไปติดตั้ง.
+> **Do not use `npm --prefix <dir> install`** — on Windows, npm will inject the
+> root package (`"exams-platform": "file:.."`) into the app's package.json/lockfile,
+> and the Docker build will then fail with EUSAGE. Use `npm run install:all` or
+> `cd` into the app directory to install instead.
 
 ## Standalone dev (per app, hot reload)
 
